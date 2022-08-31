@@ -149,6 +149,7 @@ buildProjectDesc () {
     echo "* Project is $1"
     echo "* File is $2"
     echo "* Version is $3"
+    echo "* Build Params : $4"
     echo "*****************************"
 
     cd $BUILD_PATH
@@ -161,7 +162,7 @@ buildProjectDesc () {
 
     ### ADDED "-D gl_winsys=egl" to successfully compile gst-bad on raspbian bullseye
     # run meson (a kind of cmake)
-    $MESON_BIN --prefix=$INSTALL_PATH -D gl_winsys=egl -D buildtype=release -D package-origin=https://gstreamer.freedesktop.org/src/gstreamer/ -D package-name="GStreamer $3 BLFS" build
+    $MESON_BIN --prefix=$INSTALL_PATH $4 -D buildtype=release -D package-origin=https://gstreamer.freedesktop.org/src/gstreamer/ -D package-name="GStreamer $3 BLFS" build
 
     # install the libraries
     sudo $MESON_BIN install -C build
@@ -259,7 +260,7 @@ buildProjectDesc "gstreamer" "gstreamer" $VERSION
 buildNinja "libnice" "libnice"
 
 ls $PKG_CONFIG_PATH
-buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION
+buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION "-D gl_winsys=egl"
 #Second time build for self dependencies
 #buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION
 
