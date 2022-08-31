@@ -255,7 +255,7 @@ buildProject "orc" "orc" "0.4.32" "tar.xz"
 
 buildProjectDesc "gstreamer" "gstreamer" $VERSION
 #Second time build for self dependencies
-#buildProjectDesc "gstreamer" "gstreamer" $VERSION
+buildProjectDesc "gstreamer" "gstreamer" $VERSION
 
 buildNinja "libnice" "libnice"
 
@@ -263,7 +263,7 @@ ls $PKG_CONFIG_PATH
 #on latest rasbian "-D gl_winsys=egl" as arg4
 buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION
 #Second time build for self dependencies
-#buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION
+buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION
 
 buildProject "gst-python" "gst-python" $VERSION "tar.xz"
 
