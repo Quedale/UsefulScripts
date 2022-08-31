@@ -260,7 +260,8 @@ buildProjectDesc "gstreamer" "gstreamer" $VERSION
 buildNinja "libnice" "libnice"
 
 ls $PKG_CONFIG_PATH
-buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION "-D gl_winsys=egl"
+#on latest rasbian "-D gl_winsys=egl" as arg4
+buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION
 #Second time build for self dependencies
 #buildProjectDesc "gst-plugins-base" "gst-plugins-base" $VERSION
 
