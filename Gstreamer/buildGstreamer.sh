@@ -35,7 +35,10 @@ sudo apt install libglib2.0-dev libgirepository1.0-dev libxml2-dev libcgroup-dev
                  libwavpack-dev libtwolame-dev libspeex-dev libshout-dev libpulse-dev libiec61883-dev libavc1394-dev \
                  libcaca-dev libjack-jackd2-dev liba52-0.7.4-dev libopencore-amrnb-dev libopencore-amrwb-dev libavfilter-dev \
                  librtmp-dev libvo-aacenc-dev libjpeg-dev libx264-dev libjson-glib-dev mono-mcs mono-devel \
-                 libgtk2.0-dev libcanberra-gtk* libgtk-3-dev python3-libxml2 libasound2-dev
+                 libgtk2.0-dev libcanberra-gtk* libgtk-3-dev python3-libxml2 libasound2-dev \
+
+#Ubuntu 22 x86_64
+sudo apt install libopenh264-dev
 
 #Unavailable on Armbian Buster Legacy
 #sudo apt install libwpewebkit-1.0-dev libwpebackend-fdo-1.0-dev libsrt-gnutls-dev libopenaptx-dev libldacbt-enc-dev
@@ -276,8 +279,6 @@ buildProjectDesc "gst-plugins-ugly" "gst-plugins-ugly" $VERSION
 buildProjectDesc "gst-libav" "gst-libav" $VERSION
 #buildProjectDesc "gst-omx" "gst-omx"  $VERSION
 
-#buildProjectDesc "gst-rtsp" "gst-rtsp-server" $VERSION
-
 buildProjectDesc "gst-rtsp-server" "gst-rtsp-server" $VERSION
 
 buildProject "gst-devtools" "gst-devtools" $VERSION "tar.xz"
@@ -301,9 +302,14 @@ echo "* Moving typelib files"
 echo "*****************************"
 #Armbian jammy rockpro64
 sudo cp /usr/local/lib/aarch64-linux-gnu/girepository-1.0/Gst* /usr/lib/aarch64-linux-gnu/girepository-1.0/
+#x86_64
+sudo cp /usr/local/lib/x86_64-linux-gnu/girepository-1.0/* /usr/lib/x86_64-linux-gnu/girepository-1.0/
 #Raspbian
 sudo cp /usr/local/lib/arm-linux-gnueabihf/girepository-1.0/Gst* /usr/lib/arm-linux-gnueabihf/girepository-1.0/
+
+#Copy override to alternate path
 sudo cp /usr/local/lib/python3/dist-packages/gi/overrides/* /usr/lib/python3/dist-packages/gi/overrides/
+
 
 echo "*****************************"
 echo "* Clean up sources..."
