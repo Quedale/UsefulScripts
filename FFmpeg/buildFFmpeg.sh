@@ -58,7 +58,7 @@ make install
 cd ~/ffmpeg_sources && \
 git -C libvpx pull 2> /dev/null || git clone --depth 1 https://chromium.googlesource.com/webm/libvpx.git && \
 cd libvpx && \
-PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=yasm && \
+PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --disable-examples --enable-shared --enable-pic --disable-unit-tests --enable-vp9-highbitdepth --as=yasm && \
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
@@ -83,6 +83,7 @@ make install
 
 cd ~/ffmpeg_sources && \
 git -C aom pull 2> /dev/null || git clone --depth 1 https://aomedia.googlesource.com/aom && \
+cd aom && \
 mkdir -p aom_build && \
 cd aom_build && \
 #RPI
@@ -124,8 +125,8 @@ git clone -b release-3.0.4 https://github.com/sekrit-twc/zimg.git && \
 cd zimg && \
 sh autogen.sh && \
 ./configure --prefix="$HOME/ffmpeg_build" && \
-make j$(nproc) && \
-sudo make install
+make -j$(nproc) && \
+make install
 
 cd ~/ffmpeg_sources && \
 git clone --depth 1 https://github.com/ultravideo/kvazaar.git  && \
@@ -133,7 +134,40 @@ cd kvazaar && \
 ./autogen.sh && \
 ./configure --prefix="$HOME/ffmpeg_build" && \
 make -j$(nproc) && \
-sudo make install
+make install
+
+cd ~/ffmpeg_sources && \
+git clone https://github.com/google/snappy.git && \
+cd snappy && \
+git submodule update --init && \
+mkdir build && \
+cd build && cmake ../ && make -j$(nproc) && \
+make install
+
+cd ~/ffmpeg_sources && \
+git clone https://github.com/chirlu/soxr.git && \
+cd soxr && \
+mkdir build && cd build && \
+PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON .. && \
+PATH="$HOME/bin:$PATH" make -j$(nproc) && \
+make install
+
+cd ~/ffmpeg_sources && \
+git clone https://git.libssh.org/projects/libssh.git && \
+cd libssh && \
+mkdir build && cd build && \
+PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON .. && \
+PATH="$HOME/bin:$PATH" make -j$(nproc) && \
+make install
+
+
+cd ~/ffmpeg_sources && \
+git clone https://github.com/webmproject/libwebp.git && \
+cd libwebp && \
+mkdir build && cd build && \
+PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON .. && \
+PATH="$HOME/bin:$PATH" make -j$(nproc) && \
+make install
 
 sudo ldconfig
 
@@ -149,10 +183,9 @@ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./conf
   --extra-libs="-lpthread -lm -latomic" \
   --ld="g++" \
   --bindir="$HOME/bin" \
-  --arch=armel \ #32bit arm
+  --arch=armel \
   --enable-gmp \
   --enable-gpl \
-  --enable-gnutls \
   --enable-libaom \
   --enable-libass \
   --enable-libdav1d \
@@ -161,18 +194,15 @@ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./conf
   --enable-libfreetype \
   --enable-libkvazaar \
   --enable-libmp3lame \
-  --enable-libopencore-amrnb \
-  --enable-libopencore-amrwb \
   --enable-libopus \
-  --enable-librtmp \
   --enable-libsnappy \
   --enable-libsoxr \
   --enable-libssh \
   --enable-libsvtav1 \
   --enable-libvorbis \
   --enable-libvpx \
-  --enable-libzimg \
   --enable-libwebp \
+  --enable-libzimg \
   --enable-libx264 \
   --enable-libx265 \
   --enable-libxml2 \
@@ -191,3 +221,5 @@ make install && \
 hash -r
 
 #LD_LIBRARY_PATH=$HOME/ffmpeg_build/lib
+#LIBRARY_PATH=$HOME/ffmpeg_build/include
+#PKG_CONFIG_PATH
