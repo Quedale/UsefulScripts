@@ -85,7 +85,11 @@ cd ~/ffmpeg_sources && \
 git -C aom pull 2> /dev/null || git clone --depth 1 https://aomedia.googlesource.com/aom && \
 mkdir -p aom_build && \
 cd aom_build && \
-PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_TESTS=OFF -DENABLE_NASM=on ../aom && \
+#RPI
+PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" AOM_SRC -DENABLE_NASM=on -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DPYTHON_EXECUTABLE="$(which python3)" -DCMAKE_C_FLAGS="-mfpu=vfp -mfloat-abi=hard" .. && \
+sed -i 's/ENABLE_NEON:BOOL=ON/ENABLE_NEON:BOOL=OFF/' CMakeCache.txt && \
+#x86_64
+#PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_TESTS=OFF -DENABLE_NASM=on ../aom && \
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
@@ -115,6 +119,23 @@ meson setup -Denable_tests=false -Denable_docs=false --buildtype=release --defau
 ninja && \
 ninja install
 
+cd ~/ffmpeg_sources && \
+git clone -b release-3.0.4 https://github.com/sekrit-twc/zimg.git && \
+cd zimg && \
+sh autogen.sh && \
+./configure --prefix="$HOME/ffmpeg_build" && \
+make j$(nproc) && \
+sudo make install
+
+cd ~/ffmpeg_sources && \
+git clone --depth 1 https://github.com/ultravideo/kvazaar.git  && \
+cd kvazaar && \
+./autogen.sh && \
+./configure --prefix="$HOME/ffmpeg_build" && \
+make -j$(nproc) && \
+sudo make install
+
+sudo ldconfig
 
 cd ~/ffmpeg_sources && \
 wget -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
@@ -125,27 +146,46 @@ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./conf
   --pkg-config-flags="--static" \
   --extra-cflags="-I$HOME/ffmpeg_build/include" \
   --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
-  --extra-libs="-lpthread -lm" \
+  --extra-libs="-lpthread -lm -latomic" \
   --ld="g++" \
   --bindir="$HOME/bin" \
+  --arch=armel \ #32bit arm
+  --enable-gmp \
   --enable-gpl \
   --enable-gnutls \
   --enable-libaom \
   --enable-libass \
+  --enable-libdav1d \
+  --enable-libdrm \
   --enable-libfdk-aac \
   --enable-libfreetype \
+  --enable-libkvazaar \
   --enable-libmp3lame \
+  --enable-libopencore-amrnb \
+  --enable-libopencore-amrwb \
   --enable-libopus \
+  --enable-librtmp \
+  --enable-libsnappy \
+  --enable-libsoxr \
+  --enable-libssh \
   --enable-libsvtav1 \
-  --enable-libdav1d \
   --enable-libvorbis \
   --enable-libvpx \
+  --enable-libzimg \
+  --enable-libwebp \
   --enable-libx264 \
   --enable-libx265 \
+  --enable-libxml2 \
+  --enable-mmal \
   --enable-nonfree \
+  --enable-version3 \
   --enable-pic \
   --disable-static \
-  --enable-shared && \
+  --enable-shared \
+  --target-os=linux \
+  --enable-pthreads \
+  --enable-openssl \
+  --enable-hardcoded-tables && \
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install && \
 hash -r
