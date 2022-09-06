@@ -43,6 +43,8 @@ cd automake-1.16.5
 make -j$(nproc)
 make install
 
+checkWithUser
+
 cd ~/ffmpeg_sources
 wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
 tar xvfz autoconf-2.71.tar.gz
@@ -51,6 +53,8 @@ PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME
 make -j$(nproc) && \
 make install
 
+checkWithUser
+
 cd ~/ffmpeg_sources
 wget https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
 tar xvfz pkgconf-1.9.3.tar.gz
@@ -58,6 +62,8 @@ cd pkgconf-1.9.3
 PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
 make -j$(nproc) && \
 make install
+
+checkWithUser
 
 cd ~/ffmpeg_sources
 wget https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
@@ -69,6 +75,8 @@ make install
 #libxml2 has hardcoded reference to /usr/bin/m4
 sudo ln /home/pi/bin/m4 /usr/bin/m4
 
+checkWithUser
+
 cd ~/ffmpeg_sources
 wget https://ftp.gnu.org/gnu/help2man/help2man-1.49.2.tar.xz
 tar xf help2man-1.49.2.tar.xz
@@ -76,6 +84,8 @@ cd help2man-1.49.2
 PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
 make -j$(nproc) && \
 make install
+
+checkWithUser
 
 cd ~/ffmpeg_sources
 git -C libtool pull 2> /dev/null || git clone  https://github.com/autotools-mirror/libtool.git
@@ -85,6 +95,7 @@ PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME
 make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 wget https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2 && \
@@ -95,6 +106,7 @@ PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME
 make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git -C x264 pull 2> /dev/null || git clone --depth 1 https://code.videolan.org/videolan/x264.git && \
@@ -102,6 +114,8 @@ cd x264 && \
 PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --enable-static --enable-pic && \
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
+
+checkWithUser
 
 sudo apt-get install libnuma-dev && \
 cd ~/ffmpeg_sources && \
@@ -112,6 +126,7 @@ PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/f
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git -C libvpx pull 2> /dev/null || git clone --depth 1 https://chromium.googlesource.com/webm/libvpx.git && \
@@ -120,6 +135,7 @@ PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --disable-examp
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git -C fdk-aac pull 2> /dev/null || git clone --depth 1 https://github.com/mstorsjo/fdk-aac && \
@@ -129,6 +145,7 @@ autoreconf -fiv && \
 make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git -C opus pull 2> /dev/null || git clone --depth 1 https://github.com/xiph/opus.git && \
@@ -138,6 +155,7 @@ cd opus && \
 make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git -C aom pull 2> /dev/null || git clone --depth 1 https://aomedia.googlesource.com/aom && \
@@ -152,6 +170,8 @@ sed -i 's/ENABLE_NEON:BOOL=ON/ENABLE_NEON:BOOL=OFF/' CMakeCache.txt && \
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
+
 cd ~/ffmpeg_sources && \
 git -C SVT-AV1 pull 2> /dev/null || git clone https://gitlab.com/AOMediaCodec/SVT-AV1.git && \
 mkdir -p SVT-AV1/build && \
@@ -160,6 +180,7 @@ PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/f
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git -C dav1d pull 2> /dev/null || git clone --depth 1 https://code.videolan.org/videolan/dav1d.git && \
@@ -168,6 +189,8 @@ cd dav1d/build && \
 meson setup -Denable_tools=false -Denable_tests=false --default-library=static .. --prefix="$HOME/ffmpeg_build" --libdir="$HOME/ffmpeg_build/lib" && \
 PATH="$HOME/bin:$PATH" ninja && \
 ninja install
+
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 wget https://github.com/Netflix/vmaf/archive/v2.1.1.tar.gz && \
@@ -178,6 +201,8 @@ meson setup -Denable_tests=false -Denable_docs=false --buildtype=release --defau
 ninja && \
 ninja install
 
+checkWithUser
+
 cd ~/ffmpeg_sources && \
 git clone -b release-3.0.4 https://github.com/sekrit-twc/zimg.git && \
 cd zimg && \
@@ -186,6 +211,8 @@ sh autogen.sh && \
 make -j$(nproc) && \
 make install
 
+checkWithUser
+
 cd ~/ffmpeg_sources && \
 git clone --depth 1 https://github.com/ultravideo/kvazaar.git  && \
 cd kvazaar && \
@@ -193,6 +220,8 @@ cd kvazaar && \
 ./configure --prefix="$HOME/ffmpeg_build" && \
 make -j$(nproc) && \
 make install
+
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git clone https://github.com/google/snappy.git && \
@@ -203,6 +232,8 @@ PATH="$HOME/bin:$PATH" cmake -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DCMAKE
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
+
 cd ~/ffmpeg_sources && \
 git clone https://github.com/chirlu/soxr.git && \
 cd soxr && \
@@ -211,6 +242,7 @@ PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/f
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git clone --recurse-submodules -j$(nproc) https://github.com/openssl/openssl.git
@@ -219,6 +251,8 @@ git checkout tags/OpenSSL_1_1_1q
 ./config --release --prefix="$HOME/ffmpeg_build" --libdir="$HOME/ffmpeg_build/lib" --openssldir="$HOME/ffmpeg_build/ssl"
 make -j$(nproc)
 make -j$(nproc) install
+
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git clone https://git.libssh.org/projects/libssh.git && \
@@ -229,6 +263,7 @@ PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/f
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git clone https://github.com/webmproject/libwebp.git && \
@@ -238,12 +273,16 @@ PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/f
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+checkWithUser
+
 cd ~/ffmpeg_sources && \
 git clone https://gitlab.freedesktop.org/mesa/drm.git && \
 cd drm && \
 meson setup --prefix="$HOME/ffmpeg_build" --libdir="$HOME/ffmpeg_build/lib" build && \
 PATH="$HOME/bin:$PATH" ninja && \
 ninja install -C build
+
+checkWithUser
 
 cd ~/ffmpeg_sources && \
 git clone https://github.com/GNOME/libxml2.git && \
@@ -253,6 +292,8 @@ PATH="$HOME/bin:$PATH" ./autogen.sh
 PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --with-python=off && \
 make -j$(nproc) && \
 make install
+
+checkWithUser
 
 sudo ldconfig
 
