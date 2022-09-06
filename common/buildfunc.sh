@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source ./../common/checkFunc.sh
+source $(dirname "$0")/../common/checkFunc.sh
 
 buildMake() {
     if [ $SKIP -eq 1 ]
@@ -42,7 +42,6 @@ buildNinja() {
     echo "* Repo is $2"
     echo "*****************************"
 
-    return
     cd /tmp
     sudo rm -rf $2
     git -C $2 pull 2> /dev/null || git clone https://github.com/$1/$2.git

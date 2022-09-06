@@ -2,7 +2,7 @@
 #include build functions
 CHECK=1
 SKIP=0
-source ./../common/buildfunc.sh
+source $(dirname "$0")/../common/buildfunc.sh
 
 #python3-gi python3-gi-cairo
 sudo apt install python3-pip gir1.2-gtk-3.0 make flex bison
@@ -25,6 +25,9 @@ cd /tmp
 git -C gstreamer pull 2> /dev/null || git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 cd gstreamer
 git checkout tags/1.20.3
+
+#pyobject requires glib 2.73.2
+sed -i 's/revision=glib-2-70/revision=2.73.3/' ./subprojects/glib.wrap
 
 #Initiate meson setup. Expecting failure by goobject-introspection.wrap
 PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" LIBRARY_PATH=$HOME/ffmpeg_build/include PATH="$HOME/bin:$PATH" meson --prefix=/usr/local -D libnice=enabled -D omx=enabled -D gst-omx:target=rpi -D gst-omx:header_path=/opt/vc/include/IL -D buildtype=release -D package-origin=https://gstreamer.freedesktop.org/src/gstreamer/ build

@@ -2,7 +2,7 @@
 #include build functions
 CHECK=1
 SKIP=0
-source ./../common/buildfunc.sh
+source $(dirname "$0")/../common/buildfunc.sh
 
 sudo apt-get update -qq && sudo apt-get -y install \
   autoconf \
