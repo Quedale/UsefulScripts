@@ -42,7 +42,7 @@ sed -i 's/revision=master/revision=main/' ./subprojects/pango/subprojects/gobjec
 #Reinitialize setup with patched gobject-introspection.wrap 
 PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" LIBRARY_PATH=$HOME/ffmpeg_build/include PATH="$HOME/bin:$PATH" meson --prefix=/usr/local -D libnice=enabled -D omx=enabled -D gst-omx:target=rpi -D gst-omx:header_path=/opt/vc/include/IL -D buildtype=release -D package-origin=https://gstreamer.freedesktop.org/src/gstreamer/ --reconfigure build
 checkWithUser
-ninja -C build
+PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" LIBRARY_PATH=$HOME/ffmpeg_build/include PATH="$HOME/bin:$PATH" ninja -C build
 #install first set of dependencies
 sudo meson install -C build
 
@@ -50,7 +50,7 @@ checkWithUser
 #reconfigure to discover self dependencies
 PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" LIBRARY_PATH=$HOME/ffmpeg_build/include meson --prefix=/usr/local -D libnice=enabled -D omx=enabled -D gst-omx:target=rpi -D gst-omx:header_path=/opt/vc/include/IL -D buildtype=release -D package-origin=https://gstreamer.freedesktop.org/src/gstreamer/ --reconfigure build
 checkWithUser
-ninja -C build
+PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" LIBRARY_PATH=$HOME/ffmpeg_build/include PATH="$HOME/bin:$PATH" ninja -C build
 checkWithUser
 sudo meson install -C build
 checkWithUser
