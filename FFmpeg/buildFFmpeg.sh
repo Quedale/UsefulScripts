@@ -1,6 +1,11 @@
+#!/usr/bin/env bash
+#include build functions
+CHECK=1
+SKIP=0
+source ./../common/buildfunc.sh
+
 sudo apt-get update -qq && sudo apt-get -y install \
   autoconf \
-  automake \
   build-essential \
   cmake \
   git-core \
@@ -16,17 +21,70 @@ sudo apt-get update -qq && sudo apt-get -y install \
   libxcb1-dev \
   libxcb-shm0-dev \
   libxcb-xfixes0-dev \
-  meson \
-  ninja-build \
   pkg-config \
   texinfo \
   wget \
   yasm \
-  zlib1g-dev
+  zlib1g-dev \
+  python3-pip
 
 sudo apt install libunistring-dev
 
 mkdir -p ~/ffmpeg_sources ~/bin
+
+sudo python3 -m pip install meson
+sudo python3 -m pip install ninja
+
+cd ~/ffmpeg_sources
+wget http://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
+tar xvfz automake-1.16.5.tar.gz
+cd automake-1.16.5
+./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin"
+make -j$(nproc)
+make install
+
+cd ~/ffmpeg_sources
+wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
+tar xvfz autoconf-2.71.tar.gz
+cd autoconf-2.71
+PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
+make -j$(nproc) && \
+make install
+
+cd ~/ffmpeg_sources
+wget https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
+tar xvfz pkgconf-1.9.3.tar.gz
+cd pkgconf-1.9.3
+PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
+make -j$(nproc) && \
+make install
+
+cd ~/ffmpeg_sources
+wget https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
+tar xvfz m4-1.4.19.tar.gz
+cd m4-1.4.19
+PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
+make -j$(nproc) && \
+make install
+#libxml2 has hardcoded reference to /usr/bin/m4
+sudo ln /home/pi/bin/m4 /usr/bin/m4
+
+cd ~/ffmpeg_sources
+wget https://ftp.gnu.org/gnu/help2man/help2man-1.49.2.tar.xz
+tar xf help2man-1.49.2.tar.xz
+cd help2man-1.49.2
+PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
+make -j$(nproc) && \
+make install
+
+cd ~/ffmpeg_sources
+git -C libtool pull 2> /dev/null || git clone  https://github.com/autotools-mirror/libtool.git
+cd libtool
+./bootstrap
+PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
+make -j$(nproc) && \
+make install
+
 
 cd ~/ffmpeg_sources && \
 wget https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2 && \
@@ -107,7 +165,7 @@ cd ~/ffmpeg_sources && \
 git -C dav1d pull 2> /dev/null || git clone --depth 1 https://code.videolan.org/videolan/dav1d.git && \
 mkdir -p dav1d/build && \
 cd dav1d/build && \
-meson setup -Denable_tools=false -Denable_tests=false --default-library=static .. --prefix "$HOME/ffmpeg_build" --libdir="$HOME/ffmpeg_build/lib" && \
+meson setup -Denable_tools=false -Denable_tests=false --default-library=static .. --prefix="$HOME/ffmpeg_build" --libdir="$HOME/ffmpeg_build/lib" && \
 PATH="$HOME/bin:$PATH" ninja && \
 ninja install
 
@@ -116,7 +174,7 @@ wget https://github.com/Netflix/vmaf/archive/v2.1.1.tar.gz && \
 tar xvf v2.1.1.tar.gz && \
 mkdir -p vmaf-2.1.1/libvmaf/build &&\
 cd vmaf-2.1.1/libvmaf/build && \
-meson setup -Denable_tests=false -Denable_docs=false --buildtype=release --default-library=static .. --prefix "$HOME/ffmpeg_build" --bindir="$HOME/bin" --libdir="$HOME/ffmpeg_build/lib" && \
+meson setup -Denable_tests=false -Denable_docs=false --buildtype=release --default-library=static .. --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --libdir="$HOME/ffmpeg_build/lib" && \
 ninja && \
 ninja install
 
@@ -140,8 +198,9 @@ cd ~/ffmpeg_sources && \
 git clone https://github.com/google/snappy.git && \
 cd snappy && \
 git submodule update --init && \
-mkdir build && \
-cd build && cmake ../ && make -j$(nproc) && \
+mkdir build && cd build
+PATH="$HOME/bin:$PATH" cmake -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DCMAKE_BUILD_TYPE=Release .. && \
+PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
 cd ~/ffmpeg_sources && \
@@ -152,9 +211,19 @@ PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/f
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
 make install
 
+
+cd ~/ffmpeg_sources && \
+git clone --recurse-submodules -j$(nproc) https://github.com/openssl/openssl.git
+cd openssl
+git checkout tags/OpenSSL_1_1_1q
+./config --release --prefix="$HOME/ffmpeg_build" --libdir="$HOME/ffmpeg_build/lib" --openssldir="$HOME/ffmpeg_build/ssl"
+make -j$(nproc)
+make -j$(nproc) install
+
 cd ~/ffmpeg_sources && \
 git clone https://git.libssh.org/projects/libssh.git && \
 cd libssh && \
+git checkout tags/libssh-0.10.2 && \
 mkdir build && cd build && \
 PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON .. && \
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
@@ -167,6 +236,22 @@ cd libwebp && \
 mkdir build && cd build && \
 PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON .. && \
 PATH="$HOME/bin:$PATH" make -j$(nproc) && \
+make install
+
+cd ~/ffmpeg_sources && \
+git clone https://gitlab.freedesktop.org/mesa/drm.git && \
+cd drm && \
+meson setup --prefix="$HOME/ffmpeg_build" --libdir="$HOME/ffmpeg_build/lib" build && \
+PATH="$HOME/bin:$PATH" ninja && \
+ninja install -C build
+
+cd ~/ffmpeg_sources && \
+git clone https://github.com/GNOME/libxml2.git && \
+cd libxml2 && \
+git checkout tags/v2.10.3
+PATH="$HOME/bin:$PATH" ./autogen.sh
+PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --with-python=off && \
+make -j$(nproc) && \
 make install
 
 sudo ldconfig
@@ -210,7 +295,6 @@ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./conf
   --enable-nonfree \
   --enable-version3 \
   --enable-pic \
-  --disable-static \
   --enable-shared \
   --target-os=linux \
   --enable-pthreads \
