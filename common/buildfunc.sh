@@ -43,7 +43,6 @@ buildNinja() {
     echo "*****************************"
 
     cd /tmp
-    sudo rm -rf $2
     git -C $2 pull 2> /dev/null || git clone https://github.com/$1/$2.git
     cd $2
     meson build
