@@ -8,7 +8,7 @@ arch=$(echo $(uname -a) | awk '{print $12}')
 echo "*****************************"
 echo "*** Architecture $arch ***"
 echo "*****************************"
-if [[ "$arch" -ne "armv7l" && "$arch" -eq "x86_64" ]]; then
+if [[ "$arch" == "armv7l" && "$arch" == "x86_64" ]]; then
   echo "Unknown arch : $arch"
   exit 1
 fi
@@ -253,9 +253,9 @@ buildMake1 srcdir="opus" prefix="$HOME/ffmpeg_build" binddir="$HOME/bin" autogen
 cd ~/ffmpeg_sources && \
 git -C aom pull 2> /dev/null || git clone -j$(nproc) --depth 1 https://aomedia.googlesource.com/aom
 mkdir aom/aom_build
-if [[ "$arch" -eq "x86_64" ]]; then
+if [[ "$arch" == "x86_64" ]]; then
   buildMake1 srcdir="aom/aom_build" prefix="$HOME/ffmpeg_build" binddir="$HOME/bin" cmakedir=".."
-elif [[ "$arch" -eq "armv7l" ]]; then
+elif [[ "$arch" == "armv7l" ]]; then
   buildMake1 srcdir="aom/aom_build" prefix="$HOME/ffmpeg_build" binddir="$HOME/bin" cmakedir=".." cmakeargs='-DCMAKE_C_FLAGS="-mfpu=vfp -mfloat-abi=hard"'
   #RPI specific - TODO Figure out how to inject this after cmake call
   #sed -i 's/ENABLE_NEON:BOOL=ON/ENABLE_NEON:BOOL=OFF/' CMakeCache.txt
@@ -353,9 +353,9 @@ ffmpeg_enables+=" --enable-pthreads"
 ffmpeg_enables+=" --enable-openssl"
 ffmpeg_enables+=" --enable-hardcoded-tables"
 
-if [[ "$arch" -eq "x86_64" ]]; then
+if [[ "$arch" == "x86_64" ]]; then
   echo "x86"
-elif [[ "$arch" -eq "armv7l" ]]; then
+elif [[ "$arch" == "armv7l" ]]; then
   ffmpeg_enables+=" --arch=armel"
   #Broadcom specific- AKA RPI
   ffmpeg_enables+=" --enable-mmal"
