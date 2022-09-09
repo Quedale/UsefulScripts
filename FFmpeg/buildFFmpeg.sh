@@ -156,7 +156,7 @@ buildMake1() {
       PATH="$HOME/bin:$PATH" \
       LD_LIBRARY_PATH="${prefix}/lib" \
       PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-        ./bootstrap 
+        ./bootstrap
     fi
     if [ ! -z "${autogen}" ] 
     then
@@ -166,7 +166,7 @@ buildMake1() {
       PATH="$HOME/bin:$PATH" \
       LD_LIBRARY_PATH="${prefix}/lib" \
       PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-        ./autogen.sh 
+        ./autogen.sh
     fi
     if [ ! -z "${autoreconf}" ] 
     then
@@ -243,7 +243,7 @@ buildMake1() {
     PATH="$HOME/bin:$PATH" \
     LD_LIBRARY_PATH="${prefix}/lib" \
     PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      make -j$(nproc) install exec_prefix="$HOME"
+      make -j$(nproc) install exec_prefix="${prefix}"
 
     build_time=$(( SECONDS - build_start ))
     displaytime $build_time
@@ -311,16 +311,20 @@ buildMake1 srcdir="Python-2.7.18" prefix="$PREFIX" configure="--enable-optimizat
 cd ~/ffmpeg_sources
 downloadAndExtract file=m4-1.4.19.tar.gz path=https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
 buildMake1 srcdir="m4-1.4.19" prefix="$PREFIX"
-#libxml2 has hardcoded reference to /usr/bin/m4
+
+echo "*****************************"
+echo "*** ln /home/pi/bin/m4 /usr/bin/m4 ***"
+echo "*** #libxml2 has hardcoded reference to /usr/bin/m4"
+echo "*****************************"
 sudo ln /home/pi/bin/m4 /usr/bin/m4
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=autoconf-2.71.tar.gz path=http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
-buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX"
+buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
-downloadAndExtract file=automake-1.16.5.tar.gz path=http://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
-buildMake1 srcdir="automake-1.16.5" prefix="$PREFIX"
+pullOrClone path="https://git.savannah.gnu.org/git/automake.git"  tag="v1.16.5"
+buildMake1 srcdir="automake" prefix="$PREFIX" bootstrap=true
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=pkgconf-1.9.3.tar.gz path=https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
@@ -381,8 +385,8 @@ cd ~/ffmpeg_sources
 pullOrClone path="https://code.videolan.org/videolan/dav1d.git" depth=1
 buildMeson srcdir="dav1d" prefix="$PREFIX" libdir="$PREFIX/lib" mesonargs="-Denable_tools=false -Denable_tests=false -Denable_docs=false"
 
-cd ~/ffmpeg_sources && \
-downloadAndExtract file=v2.1.1.tar.gz path=https://github.com/Netflix/vmaf/archive/v2.1.1.tar.gz
+cd ~/ffmpeg_sources
+downloadAndExtract file=v2.1.1.tar.gz path="https://github.com/Netflix/vmaf/archive/v2.1.1.tar.gz"
 buildMeson srcdir="vmaf-2.1.1/libvmaf" prefix="$PREFIX" libdir="$PREFIX/lib" mesonargs="-Denable_tests=false -Denable_docs=false"
 
 cd ~/ffmpeg_sources
@@ -433,6 +437,9 @@ cd ~/ffmpeg_sources
 pullOrClone path="https://sourceware.org/git/valgrind.git"
 buildMake1 srcdir="valgrind" prefix="$PREFIX" autogen=true
 
+echo "*****************************"
+echo "*** sudo ldconfig ***"
+echo "*****************************"
 sudo ldconfig
 
 ffmpeg_enables="--enable-gmp"
