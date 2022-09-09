@@ -2,8 +2,8 @@
 #include build functions
 PREFIX="$HOME/ffmpeg_build"
 script_start=$SECONDS
-CHECK=1
-SKIP=1
+CHECK=0
+SKIP=0
 source $(dirname "$0")/../common/buildfunc.sh
 
 arch=$(uname -m)
@@ -173,6 +173,9 @@ buildMake1() {
       echo "*****************************"
       echo "*** autoreconf ${srcdir} ***"
       echo "*****************************"
+      PATH="$HOME/bin:$PATH" \
+      LD_LIBRARY_PATH="${prefix}/lib" \
+      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       autoreconf -fiv
     fi
     if [ ! -z "${cmakedir}" ] 
@@ -240,7 +243,7 @@ buildMake1() {
     PATH="$HOME/bin:$PATH" \
     LD_LIBRARY_PATH="${prefix}/lib" \
     PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      make -j$(nproc) install
+      make -j$(nproc) install exec_prefix="$HOME"
 
     build_time=$(( SECONDS - build_start ))
     displaytime $build_time
@@ -306,6 +309,12 @@ downloadAndExtract file=Python-2.7.18.tar.xz path=https://www.python.org/ftp/pyt
 buildMake1 srcdir="Python-2.7.18" prefix="$PREFIX" configure="--enable-optimizations"
 
 cd ~/ffmpeg_sources
+downloadAndExtract file=m4-1.4.19.tar.gz path=https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
+buildMake1 srcdir="m4-1.4.19" prefix="$PREFIX"
+#libxml2 has hardcoded reference to /usr/bin/m4
+sudo ln /home/pi/bin/m4 /usr/bin/m4
+
+cd ~/ffmpeg_sources
 downloadAndExtract file=autoconf-2.71.tar.gz path=http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
 buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX"
 
@@ -316,12 +325,6 @@ buildMake1 srcdir="automake-1.16.5" prefix="$PREFIX"
 cd ~/ffmpeg_sources
 downloadAndExtract file=pkgconf-1.9.3.tar.gz path=https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
 buildMake1 srcdir="pkgconf-1.9.3" prefix="$PREFIX"
-
-cd ~/ffmpeg_sources
-downloadAndExtract file=m4-1.4.19.tar.gz path=https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
-buildMake1 srcdir="m4-1.4.19" prefix="$PREFIX"
-#libxml2 has hardcoded reference to /usr/bin/m4
-sudo ln /home/pi/bin/m4 /usr/bin/m4
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=help2man-1.49.2.tar.xz path=https://ftp.gnu.org/gnu/help2man/help2man-1.49.2.tar.xz
@@ -409,6 +412,14 @@ cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/webmproject/libwebp.git"
 mkdir "libwebp/build"
 buildMake1 srcdir="libwebp/build" prefix="$PREFIX" cmakedir=".." cmakeargs="-DBUILD_SHARED_LIBS=ON"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/freedesktop/xorg-macros.git"
+buildMake1 srcdir="xorg-macros" prefix="$PREFIX" autogen=true
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://gitlab.freedesktop.org/xorg/lib/libpciaccess.git"
+buildMake1 srcdir="libpciaccess" prefix="$PREFIX" autogen=true
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://gitlab.freedesktop.org/mesa/drm.git"
