@@ -328,7 +328,7 @@ downloadAndExtract file=help2man-1.49.2.tar.xz path=https://ftp.gnu.org/gnu/help
 buildMake1 srcdir="help2man-1.49.2" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
-git -C libtool pull 2> /dev/null || git clone -j$(nproc) https://github.com/autotools-mirror/libtool.git
+pullOrClone path="https://github.com/autotools-mirror/libtool.git" depth=1
 buildMake1 srcdir="libtool" prefix="$PREFIX" bootstrap=true
 
 cd ~/ffmpeg_sources
@@ -337,7 +337,7 @@ buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX" autogen=true
 
 cd ~/ffmpeg_sources && \
 pullOrClone path="https://code.videolan.org/videolan/x264.git" depth=1
-buildMake1 srcdir="x264" prefix="$PREFIX"
+buildMake1 srcdir="x264" prefix="$PREFIX" configure="--enable-shared --enable-pic"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=master.tar.bz2 path=https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
