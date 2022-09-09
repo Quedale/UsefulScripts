@@ -3,7 +3,7 @@
 PREFIX="$HOME/ffmpeg_build"
 script_start=$SECONDS
 CHECK=1
-SKIP=0
+SKIP=1
 source $(dirname "$0")/../common/buildfunc.sh
 
 arch=$(uname -m)
@@ -18,7 +18,7 @@ fi
 if [ $SKIP -ne 1 ]
 then
   echo "*****************************"
-  echo "*** Installing dependencies ${srcdir} ***"
+  echo "*** Installing dependencies ***"
   echo "*****************************"
   sudo apt-get update -qq && sudo apt-get install \
     build-essential \
@@ -41,7 +41,7 @@ then
     python3-pip
 
   sudo apt install libunistring-dev
-
+  sudo apt install libnuma-dev 
   sudo python3 -m pip install meson
   sudo python3 -m pip install cmake
   sudo python3 -m pip install ninja
@@ -97,7 +97,7 @@ downloadAndExtract (){
   if [ $SKIP -eq 1 ]
   then
       echo "*****************************"
-      echo "*** Skipping Download ${srcdir} ***"
+      echo "*** Skipping Download ${path} ***"
       echo "*****************************"
       return
   fi
@@ -154,8 +154,8 @@ buildMake1() {
       echo "*** bootstrap ${srcdir} ***"
       echo "*****************************"
       PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="$PREFIX/lib" \
-      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      LD_LIBRARY_PATH="${prefix}/lib" \
+      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
         ./bootstrap 
     fi
     if [ ! -z "${autogen}" ] 
@@ -164,8 +164,8 @@ buildMake1() {
       echo "*** autogen ${srcdir} ***"
       echo "*****************************"
       PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="$PREFIX/lib" \
-      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      LD_LIBRARY_PATH="${prefix}/lib" \
+      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
         ./autogen.sh 
     fi
     if [ ! -z "${autoreconf}" ] 
@@ -179,22 +179,23 @@ buildMake1() {
     then
       echo "*****************************"
       echo "*** cmake ${srcdir} ***"
+      echo "*** Argss ${cmakeargs} "
       echo "*****************************"
 
       PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="$PREFIX/lib" \
-      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      LD_LIBRARY_PATH="${prefix}/lib" \
+      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       cmake -G "Unix Makefiles" \
             ${cmakeargs} \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DCMAKE_INSTALL_PREFIX="${prefix}" \
             -DENABLE_TESTS=OFF -DENABLE_SHARED=on \
             -DENABLE_NASM=on \
             -DPYTHON_EXECUTABLE="$(which python3)" \
             -DBUILD_DEC=OFF \
             ${cmakedir}
     fi
-    echo "custom ${configcustom}"
+    
     if [ ! -z "${configcustom}" ]; then
       echo "*****************************"
       echo "*** sh custom config x2 ${srcdir} ***"
@@ -202,8 +203,8 @@ buildMake1() {
       echo "*** ${configcustom} ***"
       echo "*****************************"
       PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="$PREFIX/lib" \
-      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      LD_LIBRARY_PATH="${prefix}/lib" \
+      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
         bash ${configcustom}
     elif [ -f "./configure" ]; then
       echo "*****************************"
@@ -211,13 +212,12 @@ buildMake1() {
       echo "*****************************"
 
       PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="$PREFIX/lib" \
-      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      LD_LIBRARY_PATH="${prefix}/lib" \
+      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
         ./configure \
           --prefix=${prefix} \
           --disable-unit-tests \
           --disable-examples \
-          $binddirstr \
           ${configure}
           
           #--bindir="$HOME/bin" #Doesnt work for libvpx
@@ -230,16 +230,16 @@ buildMake1() {
     echo "*** compile ${srcdir} ***"
     echo "*****************************"
     PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="$PREFIX/lib" \
-    PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+    LD_LIBRARY_PATH="${prefix}/lib" \
+    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       make -j$(nproc)
 
     echo "*****************************"
     echo "*** install ${srcdir} ***"
     echo "*****************************"
     PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="$PREFIX/lib" \
-    PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+    LD_LIBRARY_PATH="${prefix}/lib" \
+    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       make -j$(nproc) install
 
     build_time=$(( SECONDS - build_start ))
@@ -271,8 +271,8 @@ buildMeson() {
     mkdir -p ${srcdir}/build
     cd ${srcdir}/build
     PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="$PREFIX/lib" \
-    PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+    LD_LIBRARY_PATH="${prefix}/lib" \
+    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       meson setup \
         ${mesonargs} \
         --default-library=static .. \
@@ -281,13 +281,13 @@ buildMeson() {
         --buildtype=release
         
     PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="$PREFIX/lib" \
-    PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+    LD_LIBRARY_PATH="${prefix}/lib" \
+    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       ninja
 
     PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="$PREFIX/lib" \
-    PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+    LD_LIBRARY_PATH="${prefix}/lib" \
+    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       ninja install
     
     build_time=$(( SECONDS - build_start ))
@@ -339,9 +339,7 @@ cd ~/ffmpeg_sources && \
 pullOrClone path="https://code.videolan.org/videolan/x264.git" depth=1
 buildMake1 srcdir="x264" prefix="$PREFIX"
 
-sudo apt-get install libnuma-dev && \
 cd ~/ffmpeg_sources
-
 downloadAndExtract file=master.tar.bz2 path=https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
 buildMake1 srcdir="multicoreware*/build/linux" prefix="$PREFIX" cmakedir="../../source"
 
@@ -360,12 +358,16 @@ buildMake1 srcdir="opus" prefix="$PREFIX" autogen=true
 cd ~/ffmpeg_sources
 pullOrClone path="https://aomedia.googlesource.com/aom" depth=1
 mkdir aom/aom_build
-if [[ "$arch" == "armv7l" ]]; then
-  #RPI specific TODO Detect more accuratly #cmakeargs='-DCMAKE_C_FLAGS="-mfpu=vfp"'?
+if [[ "$arch" == "x86_64" ]]; then
+  buildMake1 srcdir="aom/aom_build" prefix="$PREFIX" cmakedir=".."
+elif [[ "$arch" == "armv7l" ]]; then
+  #RPI specific TODO Detect more accuratly
   #/opt/vc/include/IL/OMX_Broadcom.h
-  sed -i 's/ENABLE_NEON:BOOL=ON/ENABLE_NEON:BOOL=OFF/' aom/aom_build/CMakeCache.txt
+  buildMake1 srcdir="aom/aom_build" prefix="$PREFIX" cmakedir=".." cmakeargs='-DENABLE_NEON=OFF -DCMAKE_C_FLAGS="-mfpu=vfp"'
+else
+  echo "Unknown platform $arch"
+  exit 1
 fi
-buildMake1 srcdir="aom/aom_build" prefix="$PREFIX" cmakedir=".."
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://gitlab.com/AOMediaCodec/SVT-AV1.git"
