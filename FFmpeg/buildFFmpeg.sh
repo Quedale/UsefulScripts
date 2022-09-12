@@ -4,13 +4,14 @@ PREFIX="$HOME/ffmpeg_build"
 script_start=$SECONDS
 CHECK=0
 SKIP=0
+echo "$(dirname "$0")"
 source $(dirname "$0")/../common/buildfunc.sh
 
 arch=$(uname -m)
 echo "*****************************"
 echo "*** Architecture $arch ***"
 echo "*****************************"
-if [[ "$arch" == "armv7l" && "$arch" == "x86_64" ]]; then
+if [[ "$arch" != "armv7l" && "$arch" != "x86_64" ]]; then
   echo "Unknown arch : $arch"
   exit 1
 fi
@@ -49,264 +50,16 @@ fi
 
 mkdir -p ~/ffmpeg_sources ~/bin
 
-pullOrClone (){
-  local path tag depth recurse # reset first
-  local "${@}"
-
-  if [ $SKIP -eq 1 ]
-  then
-      echo "*****************************"
-      echo "*** Skipping Pull/Clone ${tag}@${path} ***"
-      echo "*****************************"
-      return
-  fi
-
-  recursestr=""
-  if [ ! -z "${recurse}" ] 
-  then
-    recursestr="--recurse-submodules"
-  fi
-  depthstr=""
-  if [ ! -z "${depth}" ] 
-  then
-    depthstr="--depth ${depth}"
-  fi 
-
-  tgstr=""
-  tgstr2=""
-  if [ ! -z "${tag}" ] 
-  then
-    tgstr="origin tags/${tag}"
-    tgstr2="-b ${tag}"
-  fi
-
-  echo "*****************************"
-  echo "*** Cloning ${tag}@${path} ***"
-  echo "*****************************"
-  IFS='/' read -ra ADDR <<< "$path"
-  namedotgit=${ADDR[-1]}
-  IFS='.' read -ra ADDR <<< "$namedotgit"
-  name=${ADDR[0]}
-  git -C $name pull $tgstr 2> /dev/null || git clone -j$(nproc) $recursestr $depthstr $tgstr2 ${path}
-}
-
-downloadAndExtract (){
-  local path file # reset first
-  local "${@}"
-
-  if [ $SKIP -eq 1 ]
-  then
-      echo "*****************************"
-      echo "*** Skipping Download ${path} ***"
-      echo "*****************************"
-      return
-  fi
-
-  if [ ! -f "${file}" ]; then
-    echo "*****************************"
-    echo "*** Downloading : ${path} ***"
-    echo "*****************************"
-    wget ${path}
-  else
-    echo "*****************************"
-    echo "*** Source already downloaded : ${path} ***"
-    echo "*****************************"
-  fi
-
-  echo "*****************************"
-  echo "*** Extracting : ${file} ***"
-  echo "*****************************"
-  if [[ ${file} == *.tar.gz ]]; then
-    tar xfz ${file}
-  elif [[ ${file} == *.tar.xz ]]; then
-    tar xf ${file}
-  elif [[ ${file} == *.tar.bz2 ]]; then
-    tar xjf ${file}
-  else
-    echo "ERROR FILE NOT FOUND ${path} // ${file}"
-    exit 1
-  fi
-  
-}
-buildMake1() {
-    local srcdir prefix bootstrap autogen autoreconf configure configcustom cmakedir cmakeargs # reset first
-    local "${@}"
-    build_start=$SECONDS
-    if [ $SKIP -eq 1 ]
-    then
-        echo "*****************************"
-        echo "*** Skipping Make ${srcdir} ***"
-        echo "*****************************"
-        return
-    fi
-
-    echo "*****************************"
-    echo "* Building Github Project"
-    echo "* Src dir : ${srcdir}"
-    echo "* Prefix : ${prefix}"
-    echo "* Bootstrap: ${bootstrap}"
-    echo "*****************************"
-
-    cd ${srcdir}
-    if [ ! -z "${bootstrap}" ] 
-    then
-      echo "*****************************"
-      echo "*** bootstrap ${srcdir} ***"
-      echo "*****************************"
-      PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="${prefix}/lib" \
-      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-        ./bootstrap
-    fi
-    if [ ! -z "${autogen}" ] 
-    then
-      echo "*****************************"
-      echo "*** autogen ${srcdir} ***"
-      echo "*****************************"
-      PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="${prefix}/lib" \
-      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-        ./autogen.sh
-    fi
-    if [ ! -z "${autoreconf}" ] 
-    then
-      echo "*****************************"
-      echo "*** autoreconf ${srcdir} ***"
-      echo "*****************************"
-      PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="${prefix}/lib" \
-      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      autoreconf -fiv
-    fi
-    if [ ! -z "${cmakedir}" ] 
-    then
-      echo "*****************************"
-      echo "*** cmake ${srcdir} ***"
-      echo "*** Argss ${cmakeargs} "
-      echo "*****************************"
-
-      PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="${prefix}/lib" \
-      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      cmake -G "Unix Makefiles" \
-            ${cmakeargs} \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX="${prefix}" \
-            -DENABLE_TESTS=OFF -DENABLE_SHARED=on \
-            -DENABLE_NASM=on \
-            -DPYTHON_EXECUTABLE="$(which python3)" \
-            -DBUILD_DEC=OFF \
-            ${cmakedir}
-    fi
-    
-    if [ ! -z "${configcustom}" ]; then
-      echo "*****************************"
-      echo "*** sh custom config x2 ${srcdir} ***"
-      echo "*** ${configcustom} ***"
-      echo "*** ${configcustom} ***"
-      echo "*****************************"
-      PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="${prefix}/lib" \
-      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-        bash ${configcustom}
-    elif [ -f "./configure" ]; then
-      echo "*****************************"
-      echo "*** configure ${srcdir} ***"
-      echo "*****************************"
-
-      PATH="$HOME/bin:$PATH" \
-      LD_LIBRARY_PATH="${prefix}/lib" \
-      PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-        ./configure \
-          --prefix=${prefix} \
-          --disable-unit-tests \
-          --disable-examples \
-          ${configure}
-          
-          #--bindir="$HOME/bin" #Doesnt work for libvpx
-    else
-      echo "*****************************"
-      echo "*** no configuration available ${srcdir} ***"
-      echo "*****************************"
-    fi
-    echo "*****************************"
-    echo "*** compile ${srcdir} ***"
-    echo "*****************************"
-    PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="${prefix}/lib" \
-    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      make -j$(nproc)
-
-    echo "*****************************"
-    echo "*** install ${srcdir} ***"
-    echo "*****************************"
-    PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="${prefix}/lib" \
-    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      make -j$(nproc) install exec_prefix="${prefix}"
-
-    build_time=$(( SECONDS - build_start ))
-    displaytime $build_time
-    
-    checkWithUser
-}
-
-buildMeson() {
-    local srcdir mesonargs prefix libdir
-    local "${@}"
-
-    build_start=$SECONDS
-    if [ $SKIP -eq 1 ]
-    then
-        echo "*****************************"
-        echo "*** Skipping Meson ${srcdir} ***"
-        echo "*****************************"
-        return
-    fi
-
-    echo "*****************************"
-    echo "* Building Github Project"
-    echo "* Src dir : ${srcdir}"
-    echo "* Prefix : ${prefix}"
-    echo "* libdir : ${libdir}"
-    echo "*****************************"
-
-    mkdir -p ${srcdir}/build
-    cd ${srcdir}/build
-    PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="${prefix}/lib" \
-    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      meson setup \
-        ${mesonargs} \
-        --default-library=static .. \
-        --prefix=${prefix} \
-        --libdir=${libdir} \
-        --buildtype=release
-        
-    PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="${prefix}/lib" \
-    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      ninja
-
-    PATH="$HOME/bin:$PATH" \
-    LD_LIBRARY_PATH="${prefix}/lib" \
-    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      ninja install
-    
-    build_time=$(( SECONDS - build_start ))
-    displaytime $build_time
-    
-    checkWithUser
-}
-
 cd ~/ffmpeg_sources
 #libssh has a hard reference on 1_1_0
 pullOrClone path="https://github.com/openssl/openssl.git" tag="OpenSSL_1_1_1q" #tag="OpenSSL_1_1_0l"
 buildMake1 srcdir="openssl" prefix="$PREFIX" configcustom="./config --prefix=$PREFIX --openssldir=$PREFIX/ssl shared"
+#TODO check if all distro uses /etc/ssl/certs
+cp -r /etc/ssl/certs/* $PREFIX/ssl/certs
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=Python-2.7.18.tar.xz path=https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz
-buildMake1 srcdir="Python-2.7.18" prefix="$PREFIX" configure="--enable-optimizations"
+buildMake1 srcdir="Python-2.7.18" prefix="$PREFIX" configure="--enable-optimizations  --enable-shared"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=m4-1.4.19.tar.gz path=https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
@@ -324,7 +77,7 @@ buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX" configure="--bindir=$HOME/bin
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://git.savannah.gnu.org/git/automake.git"  tag="v1.16.5"
-buildMake1 srcdir="automake" prefix="$PREFIX" bootstrap=true
+buildMake1 srcdir="automake" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=pkgconf-1.9.3.tar.gz path=https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
@@ -335,14 +88,14 @@ downloadAndExtract file=help2man-1.49.2.tar.xz path=https://ftp.gnu.org/gnu/help
 buildMake1 srcdir="help2man-1.49.2" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
-pullOrClone path="https://github.com/autotools-mirror/libtool.git" depth=1
-buildMake1 srcdir="libtool" prefix="$PREFIX" bootstrap=true
+pullOrClone path="https://github.com/autotools-mirror/libtool.git" depth=1 tag="v2.4.7"
+buildMake1 srcdir="libtool" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=nasm-2.15.05.tar.bz2 path=https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2
-buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX"
 
-cd ~/ffmpeg_sources && \
+cd ~/ffmpeg_sources
 pullOrClone path="https://code.videolan.org/videolan/x264.git" depth=1
 buildMake1 srcdir="x264" prefix="$PREFIX" configure="--enable-shared --enable-pic"
 
@@ -360,7 +113,7 @@ buildMake1 srcdir="fdk-aac" prefix="$PREFIX" autoreconf=true configure="--enable
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/xiph/opus.git" depth=1
-buildMake1 srcdir="opus" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="opus" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://aomedia.googlesource.com/aom" depth=1
@@ -383,19 +136,19 @@ buildMake1 srcdir="SVT-AV1/build" prefix="$PREFIX" cmakedir=".." cmakeargs="-DBU
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://code.videolan.org/videolan/dav1d.git" depth=1
-buildMeson srcdir="dav1d" prefix="$PREFIX" libdir="$PREFIX/lib" mesonargs="-Denable_tools=false -Denable_tests=false -Denable_docs=false"
+buildMeson1 srcdir="dav1d" prefix="$PREFIX" mesonargs="-Denable_tools=false -Denable_tests=false -Denable_docs=false"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=v2.1.1.tar.gz path="https://github.com/Netflix/vmaf/archive/v2.1.1.tar.gz"
-buildMeson srcdir="vmaf-2.1.1/libvmaf" prefix="$PREFIX" libdir="$PREFIX/lib" mesonargs="-Denable_tests=false -Denable_docs=false"
+buildMeson1 srcdir="vmaf-2.1.1/libvmaf" prefix="$PREFIX" mesonargs="-Denable_tests=false -Denable_docs=false"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/sekrit-twc/zimg.git" tag="release-3.0.4"
-buildMake1 srcdir="zimg" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="zimg" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/ultravideo/kvazaar.git" depth=1 tag="v2.1.0"
-buildMake1 srcdir="kvazaar" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="kvazaar" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/google/snappy.git" recurse=true
@@ -419,23 +172,47 @@ buildMake1 srcdir="libwebp/build" prefix="$PREFIX" cmakedir=".." cmakeargs="-DBU
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/freedesktop/xorg-macros.git"
-buildMake1 srcdir="xorg-macros" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="xorg-macros" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://gitlab.freedesktop.org/xorg/lib/libpciaccess.git"
-buildMake1 srcdir="libpciaccess" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="libpciaccess" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://gitlab.freedesktop.org/mesa/drm.git"
-buildMeson srcdir="drm" prefix="$PREFIX" libdir="$PREFIX/lib"
+buildMeson1 srcdir="drm" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/GNOME/libxml2.git" tag="v2.10.2"
-buildMake1 srcdir="libxml2" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="libxml2" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://sourceware.org/git/valgrind.git"
-buildMake1 srcdir="valgrind" prefix="$PREFIX" autogen=true
+buildMake1 srcdir="valgrind" prefix="$PREFIX"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/fribidi/fribidi.git"
+buildMeson1 srcdir="fribidi" prefix="$PREFIX" mesonargs="-Ddocs=false"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/harfbuzz/harfbuzz.git"
+buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Ddocs=disabled"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/freedesktop/fontconfig.git"
+buildMeson1 srcdir="fontconfig" prefix="$PREFIX" mesonargs="-Ddoc-man=disabled -Ddoc-pdf=disabled -Ddoc-html=disabled -Dtests=disabled"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/libass/libass.git"
+buildMake1 srcdir="libass" prefix="$PREFIX"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/freedesktop/libXext.git"
+buildMake1 srcdir="libXext" prefix="$PREFIX"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/libsdl-org/SDL.git"
+buildMake1 srcdir="SDL" prefix="$PREFIX"
 
 echo "*****************************"
 echo "*** sudo ldconfig ***"
@@ -481,7 +258,7 @@ fi
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=ffmpeg-snapshot.tar.bz2 path=https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
-cd ffmpeg &&
+cd ffmpeg
 echo "*****************************"
 echo "*** Configure FFmpeg      ***"
 echo "*****************************"
