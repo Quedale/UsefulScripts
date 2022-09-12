@@ -119,7 +119,6 @@ buildMake1() {
                 --prefix=${prefix} \
                 --disable-unit-tests \
                 --disable-examples \
-                --bindir=$HOME/bin \
                 ${configure}
           
           #--bindir="$HOME/bin" #Doesnt work for libvpx
