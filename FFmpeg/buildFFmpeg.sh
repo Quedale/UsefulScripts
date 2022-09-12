@@ -76,32 +76,40 @@ downloadAndExtract file=autoconf-2.71.tar.gz path=http://ftp.gnu.org/gnu/autocon
 buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
+pullOrClone path="https://git.savannah.gnu.org/r/gawk.git"
+buildMake1 srcdir="gawk" prefix="$PREFIX" configure="--bindir=$HOME/bin"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/debian-tex/texinfo.git"
+buildMake1 srcdir="texinfo" prefix="$PREFIX" configure="--bindir=$HOME/bin"
+
+cd ~/ffmpeg_sources
 pullOrClone path="https://git.savannah.gnu.org/git/automake.git"  tag="v1.16.5"
-buildMake1 srcdir="automake" prefix="$PREFIX"
+buildMake1 srcdir="automake" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=pkgconf-1.9.3.tar.gz path=https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
-buildMake1 srcdir="pkgconf-1.9.3" prefix="$PREFIX"
+buildMake1 srcdir="pkgconf-1.9.3" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=help2man-1.49.2.tar.xz path=https://ftp.gnu.org/gnu/help2man/help2man-1.49.2.tar.xz
-buildMake1 srcdir="help2man-1.49.2" prefix="$PREFIX"
+buildMake1 srcdir="help2man-1.49.2" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/autotools-mirror/libtool.git" depth=1 tag="v2.4.7"
-buildMake1 srcdir="libtool" prefix="$PREFIX"
+buildMake1 srcdir="libtool" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=nasm-2.15.05.tar.bz2 path=https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2
-buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX"
+buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://code.videolan.org/videolan/x264.git" depth=1
-buildMake1 srcdir="x264" prefix="$PREFIX" configure="--enable-shared --enable-pic"
+buildMake1 srcdir="x264" prefix="$PREFIX" configure="--enable-shared --enable-pic --bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=master.tar.bz2 path=https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
-buildMake1 srcdir="multicoreware*/build/linux" prefix="$PREFIX" cmakedir="../../source"
+buildMake1 srcdir="multicoreware*/build/linux" prefix="$PREFIX" cmakedir="../../source" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://chromium.googlesource.com/webm/libvpx.git" depth=1
