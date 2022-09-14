@@ -61,15 +61,6 @@ cd ~/ffmpeg_sources
 downloadAndExtract file=Python-2.7.18.tar.xz path=https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz
 buildMake1 srcdir="Python-2.7.18" prefix="$PREFIX" configure="--enable-optimizations  --enable-shared"
 
-cd ~/ffmpeg_sources
-downloadAndExtract file=m4-1.4.19.tar.gz path=https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
-buildMake1 srcdir="m4-1.4.19" prefix="$PREFIX"
-
-echo "*****************************"
-echo "*** ln /home/pi/bin/m4 /usr/bin/m4 ***"
-echo "*** #libxml2 has hardcoded reference to /usr/bin/m4"
-echo "*****************************"
-sudo ln /home/pi/bin/m4 /usr/bin/m4
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=autoconf-2.71.tar.gz path=http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
@@ -86,6 +77,16 @@ buildMake1 srcdir="texinfo" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 cd ~/ffmpeg_sources
 pullOrClone path="https://git.savannah.gnu.org/git/automake.git"  tag="v1.16.5"
 buildMake1 srcdir="automake" prefix="$PREFIX" configure="--bindir=$HOME/bin"
+
+cd ~/ffmpeg_sources
+downloadAndExtract file=m4-1.4.19.tar.gz path=https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
+buildMake1 srcdir="m4-1.4.19" prefix="$PREFIX"
+
+echo "*****************************"
+echo "*** ln /home/pi/bin/m4 /usr/bin/m4 ***"
+echo "*** #libxml2 has hardcoded reference to /usr/bin/m4"
+echo "*****************************"
+sudo ln /home/pi/bin/m4 /usr/bin/m4
 
 cd ~/ffmpeg_sources
 downloadAndExtract file=pkgconf-1.9.3.tar.gz path=https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
