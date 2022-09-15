@@ -107,6 +107,29 @@ checkPkg (){
     echo "Installed"
 }
 
+checkProg () {
+    local name args prefix # reset first
+    local "${@}"
+
+    if !     PATH="$HOME/bin:$PATH" \
+    LD_LIBRARY_PATH="${prefix}/lib" \
+    PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" command -v ${name} &> /dev/null
+    then
+        return #Prog not found
+    else
+        PATH="$HOME/bin:$PATH" \
+        LD_LIBRARY_PATH="${prefix}/lib" \
+        PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
+        command ${name} ${args} &> /dev/null
+        status=$?
+        if [[ $status -eq 0 ]]; then
+            echo "Working"
+        else
+            return #Prog failed
+        fi
+    fi
+}
+
 checkWithUser () {
     if [ $CHECK -ne 1 ] 
     then

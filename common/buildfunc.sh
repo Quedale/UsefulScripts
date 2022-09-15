@@ -89,7 +89,7 @@ buildMake1() {
             -DENABLE_NASM=on \
             -DPYTHON_EXECUTABLE="$(which python3)" \
             -DBUILD_DEC=OFF \
-            ${cmakedir}
+            "${cmakedir}"
     fi
     
     if [ ! -z "${configcustom}" ]; then
@@ -264,12 +264,14 @@ buildMeson1() {
         echo "*****************************"
         echo "*** Meson Reconfigure ${srcdir}"
         echo "*****************************"
+        rm -rf build_dir #Cmake state somehow gets messed up
+        mkdir build_dir
         cd build_dir
         # C_INCLUDE_PATH="${prefix}/include" \
         # CPLUS_INCLUDE_PATH="${prefix}/include" \
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
-        PATH="$HOME/bin:$PATH" \
+        PATH="${prefix}\bin:$HOME/bin:$PATH" \
         LIBRARY_PATH="${prefix}/lib:$LIBRARY_PATH" \
         LD_LIBRARY_PATH="${prefix}/lib" \
         PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
@@ -279,8 +281,8 @@ buildMeson1() {
                 $bindir_val \
                 --libdir=${prefix}/lib \
                 --includedir=${prefix}/include \
-                --buildtype=release \
-                --reconfigure
+                --buildtype=release 
+                #--reconfigure
     fi
 
     echo "*****************************"

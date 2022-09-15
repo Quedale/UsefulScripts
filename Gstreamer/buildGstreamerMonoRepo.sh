@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #include build functions
 PREFIX="$HOME/gst_build"
-CHECK=1
+SOURCES="$HOME/gst_sources"
+CHECK=0
 SKIP=0
 source $(dirname "$0")/../common/buildfunc.sh
 
@@ -9,46 +10,105 @@ arch=$(echo $(uname -a) | awk '{print $12}')
 echo "*****************************"
 echo "*** Architecture $arch ***"
 echo "*****************************"
-
 mkdir $PREFIX
-#python3-gi python3-gi-cairo
-# sudo apt install python3-pip gir1.2-gtk-3.0 make flex bison
-#Custom dependencie by glib-networking where custom build location  is not picked up
-#sudo apt install libssl-dev
+mkdir $SOURCES
 
-sudo python3 -m pip install --upgrade pip
-sudo python3 -m pip install meson
-sudo python3 -m pip install cmake
-sudo python3 -m pip install ninja
-#sudo python3 -m pip install nasm
-#sudo python3 -m pip install gi
-#sudo python3 -m pip install pycairo
+if [ $SKIP -eq 0 ]
+then
+    echo "*****************************"
+    echo "*   Installing PIP"
+    echo "*****************************"
+    sudo apt install python3-pip
 
-#Incompabible with apt version
-#sudo apt remove libglib2.0-dev
+    echo "*****************************"
+    echo "*   Installing Build tools"
+    echo "*****************************"
+    sudo apt install autoconf automake  bison pkg-config
 
+    echo "*****************************"
+    echo "*   Upgrading PIP"
+    echo "*****************************"
+    python3 -m pip install --upgrade pip
+    echo "*****************************"
+    echo "*   Installing Meson"
+    echo "*****************************"
+    python3 -m pip install meson
+    echo "*****************************"
+    echo "*   Installing Cmake"
+    echo "*****************************"
+    python3 -m pip install cmake
+    echo "*****************************"
+    echo "*   Installing Ninja"
+    echo "*****************************"
+    python3 -m pip install ninja
+    echo "*****************************"
+    echo "*   Installing gobject"
+    echo "*****************************"
+    python3 -m pip install gobject
+
+fi
 #buildNinja "tinyalsa" "tinyalsa"
 
+#Needed by xorg-macros
+# cd $SOURCES
+# downloadAndExtract file=autoconf-2.71.tar.gz path=http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
+# buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX" configure="--bindir=$HOME/bin"
+
+
 #Needed for libpciaccess
-cd /tmp
-pullOrClone path="https://github.com/freedesktop/xorg-macros.git"
-buildMake1 srcdir="xorg-macros" prefix="$PREFIX"
+if [ -z "$(checkPkg name='xorg-macros' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://github.com/freedesktop/xorg-macros.git" tag="util-macros-1.19.1"
+    buildMake1 srcdir="xorg-macros" prefix="$PREFIX" configure="--datarootdir=$PREFIX/lib"
+else
+    echo "Xorg-macro already installed."
+fi
 
 #Needed for libdrm
-cd /tmp
-pullOrClone path="https://gitlab.freedesktop.org/xorg/lib/libpciaccess.git"
-buildMake1 srcdir="libpciaccess" prefix="$PREFIX"
+if [ -z "$(checkPkg name='pciaccess' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://gitlab.freedesktop.org/xorg/lib/libpciaccess.git"
+    buildMeson1 srcdir="libpciaccess" prefix="$PREFIX"
+else
+    echo "libpciaccess already installed."
+fi
 
-#Needed for libav
-cd /tmp
-downloadAndExtract file=nasm-2.15.05.tar.bz2 path=https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2
-buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX"
+#Needed by glib-networking
+if [ -z "$(checkPkg name='openssl' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://github.com/openssl/openssl.git" tag="OpenSSL_1_1_1q" #tag="OpenSSL_1_1_0l"
+    buildMake1 srcdir="openssl" prefix="$PREFIX" configcustom="./config --prefix=$PREFIX --openssldir=$PREFIX/ssl shared"
+    #TODO check if all distro uses /etc/ssl/certs
+    cp -r /etc/ssl/certs/* $PREFIX/ssl/certs
+else
+    echo "openssl already installed."
+fi
+
+if [ -z "$(checkProg name='nasm' args='--version')" ]; then
+    cd $SOURCES
+    downloadAndExtract file=nasm-2.15.05.tar.bz2 path=https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2
+    buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX" configure="--bindir=$HOME/bin"
+else
+    echo "nasm already installed."
+fi
+
+#Glib conflict during build time causes pygobject build to fail.
+#Build pygobject manually
+if [ -z "$(checkPkg name='pygobject-3.0' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://gitlab.gnome.org/GNOME/pygobject.git"
+    buildMeson1 srcdir="pygobject" prefix="$PREFIX" tag="3.38.0" bindir="$HOME/bin"
+    #For some reason it fails the first time
+    buildMeson1 srcdir="pygobject" prefix="$PREFIX" tag="3.38.0" bindir="$HOME/bin"
+else
+    echo "pygobject already installed."
+fi
 
 echo "*****************************"
 echo "*** Pull/Clone Gstreamer MonoRepo ***"
 echo "*****************************"
 gst_enables+=" -Dlibnice=enabled"
-gst_enables+=' -Dpackage-origin="GitlabMonoRepo"'
+gst_enables+=" -Dpackage-origin='GitlabFreedesktopMonoRepo'"
 if [[ "$arch" == "armv7l" ]]; then
     echo "arch is arm : $arch"
     gst_enables+=" -Domx=enabled"
@@ -59,24 +119,30 @@ fi
 gst_enables+=" -Dtests=disabled"
 gst_enables+=" -Dexamples=disabled"
 gst_enables+=" -Ddoc=disabled"
-#gst_enables+=" --force-fallback-for=openh264"
-#Override possibly outdated glib package
-#gst_enables+=" --force-fallback-for=glib-2.0"
-#gst_enables+=" --force-fallback-for=list,of,dependencies"
 
+####################################
+#
+# main branch of pygobject requires exactly 2.73.2
+# Lower isn't supported and 2.73.3 fails
+#
+####################################
 setup_patch="sed -i 's/revision=master/revision=main/' ./subprojects/pygobject/subprojects/gobject-introspection.wrap"
 setup_patch+=" && sed -i 's/revision=master/revision=main/' ./subprojects/pango/subprojects/gobject-introspection.wrap"
 setup_patch+=" && sed -i 's/revision=master/revision=main/' ./subprojects/gobject-introspection.wrap"
+setup_patch+=" && sed -i 's/revision=master/revision=2.73.2/' ./subprojects/pygobject/subprojects/glib.wrap"
 
-cd /tmp
+cd $SOURCES
 pullOrClone path="https://gitlab.freedesktop.org/gstreamer/gstreamer.git" tag="1.20.3"
-sed -i 's/revision=glib-2-70/revision=2.73.3/' ./gstreamer/subprojects/glib.wrap
+sed -i 's/revision=glib-2-70/revision=2.73.2/' ./gstreamer/subprojects/glib.wrap
+
 buildMeson1 srcdir="gstreamer" prefix="$PREFIX" mesonargs="$gst_enables" setuppatch="$setup_patch" bindir="$HOME/bin"
+#Reconfigure to pickup self-dependencies and recompile
+#buildMeson1 srcdir="gstreamer" prefix="$PREFIX" mesonargs="$gst_enables" setuppatch="$setup_patch" bindir="$HOME/bin"
 
 ##run Gstreamer portably* and force reload plugins
 sudo rm -rf /home/pi/.cache/gstreamer-1.0/registry.armv7l.bin
+PYTHONPATH="$PREFIX/lib/python3/dist-packages" \
+LIBRARY_PATH="$PREFIX/lib:$LIBRARY_PATH" \
+LD_LIBRARY_PATH="$PREFIX/lib" \
 PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
-    C_INCLUDE_PATH="$PREFIX/include" \
-    LIBRARY_PATH="$PREFIX/include" \
-    PATH="$HOME/bin:$PATH" \
-    $PREFIX/bin/gst-launch-1.0 --version
+    $HOME/bin/gst-launch-1.0 --version

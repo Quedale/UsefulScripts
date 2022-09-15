@@ -185,7 +185,7 @@ buildMake1 srcdir="xorg-macros" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://gitlab.freedesktop.org/xorg/lib/libpciaccess.git"
-buildMake1 srcdir="libpciaccess" prefix="$PREFIX"
+buildMeson1 srcdir="libpciaccess" prefix="$PREFIX"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://gitlab.freedesktop.org/mesa/drm.git"
