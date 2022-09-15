@@ -96,10 +96,10 @@ fi
 #Build pygobject manually
 if [ -z "$(checkPkg name='pygobject-3.0' prefix=$PREFIX)" ]; then
     cd $SOURCES
-    pullOrClone path="https://gitlab.gnome.org/GNOME/pygobject.git"
-    buildMeson1 srcdir="pygobject" prefix="$PREFIX" tag="3.38.0" bindir="$HOME/bin"
+    pullOrClone path="https://gitlab.gnome.org/GNOME/pygobject.git" tag="3.38.0"
+    buildMeson1 srcdir="pygobject" prefix="$PREFIX" bindir="$HOME/bin"
     #For some reason it fails the first time
-    buildMeson1 srcdir="pygobject" prefix="$PREFIX" tag="3.38.0" bindir="$HOME/bin"
+    buildMeson1 srcdir="pygobject" prefix="$PREFIX" bindir="$HOME/bin"
 else
     echo "pygobject already installed."
 fi
@@ -141,6 +141,7 @@ buildMeson1 srcdir="gstreamer" prefix="$PREFIX" mesonargs="$gst_enables" setuppa
 
 ##run Gstreamer portably* and force reload plugins
 sudo rm -rf /home/pi/.cache/gstreamer-1.0/registry.armv7l.bin
+GI_TYPELIB_PATH="$PREFIX/lib/girepository-1.0" \
 PYTHONPATH="$PREFIX/lib/python3/dist-packages" \
 LIBRARY_PATH="$PREFIX/lib:$LIBRARY_PATH" \
 LD_LIBRARY_PATH="$PREFIX/lib" \
