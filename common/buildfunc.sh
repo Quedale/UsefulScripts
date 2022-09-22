@@ -3,31 +3,35 @@
 SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 source $SCRIPT_DIR/checkFunc.sh
 
+ORANGE='\033[0;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 buildMake1() {
-    local srcdir prefix autoreconf configure configcustom cmakedir cmakeargs # reset first
+    local srcdir prefix autoreconf preconfigure configure configcustom cmakedir cmakeargs makeargs # reset first
     local "${@}"
     build_start=$SECONDS
     if [ $SKIP -eq 1 ]
     then
-        echo "*****************************"
-        echo "*** Skipping Make ${srcdir} ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** Skipping Make ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         return
     fi
 
-    echo "*****************************"
-    echo "* Building Github Project"
-    echo "* Src dir : ${srcdir}"
-    echo "* Prefix : ${prefix}"
-    echo "* Bootstrap: ${bootstrap}"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}* Building Github Project ***\n${NC}"
+    printf "${ORANGE}* Src dir : ${srcdir} ***\n${NC}"
+    printf "${ORANGE}* Prefix : ${prefix} ***\n${NC}"
+    printf "${ORANGE}* Bootstrap: ${bootstrap} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
 
     cd ${srcdir}
     if [ -f "./bootstrap" ]; then
     #if [ ! -z "${bootstrap}" ]; then
-        echo "*****************************"
-        echo "*** bootstrap ${srcdir} ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** bootstrap ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
         PATH="$HOME/bin:$PATH" \
@@ -35,9 +39,9 @@ buildMake1() {
         PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
             ./bootstrap
     elif [ -f "./bootstrap.sh" ]; then
-        echo "*****************************"
-        echo "*** bootstrap.sh ${srcdir} ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** bootstrap.sh ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
         PATH="$HOME/bin:$PATH" \
@@ -45,9 +49,9 @@ buildMake1() {
         PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
             ./bootstrap.sh
     elif [ -f "./autogen.sh" ]; then
-        echo "*****************************"
-        echo "*** autogen ${srcdir} ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** autogen ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
         PATH="$HOME/bin:$PATH" \
@@ -58,9 +62,9 @@ buildMake1() {
 
     if [ ! -z "${autoreconf}" ] 
     then
-        echo "*****************************"
-        echo "*** autoreconf ${srcdir} ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** autoreconf ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
         PATH="$HOME/bin:$PATH" \
@@ -71,10 +75,10 @@ buildMake1() {
 
     if [ ! -z "${cmakedir}" ] 
     then
-        echo "*****************************"
-        echo "*** cmake ${srcdir} ***"
-        echo "*** Argss ${cmakeargs} "
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** cmake ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*** Args ${cmakeargs} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
 
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
@@ -92,24 +96,46 @@ buildMake1() {
             "${cmakedir}"
     fi
     
+    if [ ! -z "${preconfigure}" ]; then
+        C_INCLUDE_PATH="${prefix}/include" \
+        CPLUS_INCLUDE_PATH="${prefix}/include" \
+        PATH="$HOME/bin:$PATH" \
+        LD_LIBRARY_PATH="${prefix}/lib" \
+        PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
+            bash -c "${preconfigure}"
+    fi
+    
     if [ ! -z "${configcustom}" ]; then
-        echo "*****************************"
-        echo "*** custom config ${srcdir} ***"
-        echo "*** ${configcustom} ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** custom config ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*** ${configcustom} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
 
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
         PATH="$HOME/bin:$PATH" \
         LD_LIBRARY_PATH="${prefix}/lib" \
         PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-            bash ${configcustom}
+            bash -c "${configcustom}"
+        
+    elif [ -f "./configure.sh" ]; then
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** configure ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
 
+        C_INCLUDE_PATH="${prefix}/include" \
+        CPLUS_INCLUDE_PATH="${prefix}/include" \
+        PATH="$HOME/bin:$PATH" \
+        LD_LIBRARY_PATH="${prefix}/lib" \
+        PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
+            ./configure \
+                --prefix=${prefix} \
+                ${configure}
     elif [ -f "./configure" ]; then
-        echo "*****************************"
-        echo "*** configure ${srcdir} ***"
-        echo "*****************************"
-
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** configure ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
+    
         C_INCLUDE_PATH="${prefix}/include" \
         CPLUS_INCLUDE_PATH="${prefix}/include" \
         PATH="$HOME/bin:$PATH" \
@@ -123,31 +149,34 @@ buildMake1() {
           
           #--bindir="$HOME/bin" #Doesnt work for libvpx
     else
-      echo "*****************************"
-      echo "*** no configuration available ${srcdir} ***"
-      echo "*****************************"
+      printf "${ORANGE}*****************************\n${NC}"
+      printf "${ORANGE}*** no configuration available ${srcdir} ***\n${NC}"
+      printf "${ORANGE}*****************************\n${NC}"
     fi
 
-    echo "*****************************"
-    echo "*** compile ${srcdir} ***"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** compile ${srcdir} ***\n${NC}"
+    printf "${ORANGE}*** Make Args : ${makeargs} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
     C_INCLUDE_PATH="${prefix}/include" \
     CPLUS_INCLUDE_PATH="${prefix}/include" \
     PATH="$HOME/bin:$PATH" \
     LD_LIBRARY_PATH="${prefix}/lib" \
     PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      make -j$(nproc)
+      make -j$(nproc) ${makeargs}
 
-    echo "*****************************"
-    echo "*** install ${srcdir} ***"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** install ${srcdir} ***\n${NC}"
+    printf "${ORANGE}*** Make Args : ${makeargs} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
     C_INCLUDE_PATH="${prefix}/include" \
     CPLUS_INCLUDE_PATH="${prefix}/include" \
     PATH="$HOME/bin:$PATH" \
     LD_LIBRARY_PATH="${prefix}/lib" \
     PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-      make -j$(nproc) install #exec_prefix="$HOME/bin"
-
+      make -j$(nproc) ${makeargs} install #exec_prefix="$HOME/bin"
+    status=$?
+    echo "Make result : $status"
     build_time=$(( SECONDS - build_start ))
     displaytime $build_time
     
@@ -161,17 +190,17 @@ buildMeson1() {
     build_start=$SECONDS
     if [ $SKIP -eq 1 ]
     then
-        echo "*****************************"
-        echo "*** Skipping Meson ${srcdir} ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** Skipping Meson ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         return
     fi
 
-    echo "*****************************"
-    echo "* Building Github Project"
-    echo "* Src dir : ${srcdir}"
-    echo "* Prefix : ${prefix}"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}* Building Github Project ***\n${NC}"
+    printf "${ORANGE}* Src dir : ${srcdir} ***\n${NC}"
+    printf "${ORANGE}* Prefix : ${prefix} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
 
     bindir_val=""
     if [ ! -z "${bindir}" ]; then
@@ -183,9 +212,9 @@ buildMeson1() {
 
         cd ${srcdir}
         if [ -d "./subprojects" ]; then
-            echo "*****************************"
-            echo "*** Download Subprojects ${srcdir} ***"
-            echo "*****************************"
+            printf "${ORANGE}*****************************\n${NC}"
+            printf "${ORANGE}*** Download Subprojects ${srcdir} ***\n${NC}"
+            printf "${ORANGE}*****************************\n${NC}"
             C_INCLUDE_PATH="${prefix}/include" \
             CPLUS_INCLUDE_PATH="${prefix}/include" \
             PATH="$HOME/bin:$PATH" \
@@ -197,10 +226,10 @@ buildMeson1() {
 
         echo "setup patch : ${setuppatch}"
         if [ ! -z "${setuppatch}" ]; then
-            echo "*****************************"
-            echo "*** Meson Setup Patch ${srcdir} ***"
-            echo "*** ${setuppatch} ***"
-            echo "*****************************"
+            printf "${ORANGE}*****************************\n${NC}"
+            printf "${ORANGE}*** Meson Setup Patch ${srcdir} ***\n${NC}"
+            printf "${ORANGE}*** ${setuppatch} ***\n${NC}"
+            printf "${ORANGE}*****************************\n${NC}"
             C_INCLUDE_PATH="${prefix}/include" \
             CPLUS_INCLUDE_PATH="${prefix}/include" \
             PATH="$HOME/bin:$PATH" \
@@ -210,9 +239,9 @@ buildMeson1() {
                 bash -c "${setuppatch}"
         fi
 
-        echo "*****************************"
-        echo "*** Meson Setup ${srcdir}"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** Meson Setup ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
 
         cd build_dir
         # C_INCLUDE_PATH="${prefix}/include" \
@@ -235,9 +264,9 @@ buildMeson1() {
     else
         cd ${srcdir}
         if [ -d "./subprojects" ]; then
-            echo "*****************************"
-            echo "*** Meson Update ${srcdir}"
-            echo "*****************************"
+            printf "${ORANGE}*****************************\n${NC}"
+            printf "${ORANGE}*** Meson Update ${srcdir} ***\n${NC}"
+            printf "${ORANGE}*****************************\n${NC}"
             C_INCLUDE_PATH="${prefix}/include" \
             CPLUS_INCLUDE_PATH="${prefix}/include" \
             PATH="$HOME/bin:$PATH" \
@@ -248,10 +277,10 @@ buildMeson1() {
         fi
 
         if [ ! -z "${setuppatch}" ]; then
-            echo "*****************************"
-            echo "*** Meson Setup Patch ${srcdir} ***"
-            echo "*** ${setuppatch} ***"
-            echo "*****************************"
+            printf "${ORANGE}*****************************\n${NC}"
+            printf "${ORANGE}*** Meson Setup Patch ${srcdir} ***\n${NC}"
+            printf "${ORANGE}*** ${setuppatch} ***\n${NC}"
+            printf "${ORANGE}*****************************\n${NC}"
             C_INCLUDE_PATH="${prefix}/include" \
             CPLUS_INCLUDE_PATH="${prefix}/include" \
             PATH="$HOME/bin:$PATH" \
@@ -261,9 +290,9 @@ buildMeson1() {
                 bash -c "${setuppatch}"
         fi
 
-        echo "*****************************"
-        echo "*** Meson Reconfigure ${srcdir}"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** Meson Reconfigure ${srcdir} ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         rm -rf build_dir #Cmake state somehow gets messed up
         mkdir build_dir
         cd build_dir
@@ -285,9 +314,9 @@ buildMeson1() {
                 #--reconfigure
     fi
 
-    echo "*****************************"
-    echo "*** Meson Compile ${srcdir}"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** Meson Compile ${srcdir} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
     # C_INCLUDE_PATH="${prefix}/include" \
     # CPLUS_INCLUDE_PATH="${prefix}/include" \
     C_INCLUDE_PATH="${prefix}/include" \
@@ -297,10 +326,12 @@ buildMeson1() {
     LD_LIBRARY_PATH="${prefix}/lib" \
     PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       ninja
+    status=$?
+    echo "Make result : $status"
 
-    echo "*****************************"
-    echo "*** Meson Install ${srcdir}"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** Meson Install ${srcdir} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
     # C_INCLUDE_PATH="${prefix}/include" \
     # CPLUS_INCLUDE_PATH="${prefix}/include" \
     C_INCLUDE_PATH="${prefix}/include" \
@@ -310,7 +341,9 @@ buildMeson1() {
     LD_LIBRARY_PATH="${prefix}/lib" \
     PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
       ninja install
-    
+    status=$?
+    echo "Make result : $status"
+
     build_time=$(( SECONDS - build_start ))
     displaytime $build_time
     
@@ -320,17 +353,17 @@ buildMeson1() {
 buildMake() {
     if [ $SKIP -eq 1 ]
     then
-        echo "*****************************"
-        echo "*** Skipping $1/$2 ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** Skipping $1/$2 ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         return
     fi
 
-    echo "*****************************"
-    echo "* Building Github Project"
-    echo "* Owner is $1"
-    echo "* Repo is $2"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}* Building Github Project ***\n${NC}"
+    printf "${ORANGE}* Owner is $1 ***\n${NC}"
+    printf "${ORANGE}* Repo is $2 ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
 
       cd /tmp
     sudo rm -rf $2
@@ -346,17 +379,17 @@ buildMake() {
 buildNinja() {
     if [ $SKIP -eq 1 ]
     then
-        echo "*****************************"
-        echo "*** Skipping $1/$2 ***"
-        echo "*****************************"
+        printf "${ORANGE}*****************************\n${NC}"
+        printf "${ORANGE}*** Skipping $1/$2 ***\n${NC}"
+        printf "${ORANGE}*****************************\n${NC}"
         return
     fi
 
-    echo "*****************************"
-    echo "* Building Github Project"
-    echo "* Owner is $1"
-    echo "* Repo is $2"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}* Building Github Project *\n${NC}"
+    printf "${ORANGE}* Owner is $1 *\n${NC}"
+    printf "${ORANGE}* Repo is $2 *\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
 
     cd /tmp
     git -C $2 pull 2> /dev/null || git clone https://github.com/$1/$2.git

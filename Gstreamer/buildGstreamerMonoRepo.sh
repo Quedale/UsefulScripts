@@ -2,7 +2,7 @@
 #include build functions
 PREFIX="$HOME/gst_build"
 SOURCES="$HOME/gst_sources"
-CHECK=0
+CHECK=1
 SKIP=0
 source $(dirname "$0")/../common/buildfunc.sh
 
@@ -12,6 +12,12 @@ echo "*** Architecture $arch ***"
 echo "*****************************"
 mkdir $PREFIX
 mkdir $SOURCES
+
+#Carry ffmpeg build if exists to prevent fallback
+echo "*****************************"
+echo "*** Copying FFmeg build ***"
+echo "*****************************"
+cp -r -u $HOME/ffmpeg_build/* $PREFIX
 
 if [ $SKIP -eq 0 ]
 then
@@ -23,8 +29,8 @@ then
     echo "*****************************"
     echo "*   Installing Build tools"
     echo "*****************************"
-    sudo apt install autoconf automake  bison pkg-config
-
+    sudo apt install  bison pkg-config flex
+    #autoconf automake Now coming from ffmpeg build
     echo "*****************************"
     echo "*   Upgrading PIP"
     echo "*****************************"
@@ -49,11 +55,6 @@ then
 fi
 #buildNinja "tinyalsa" "tinyalsa"
 
-#Needed by xorg-macros
-# cd $SOURCES
-# downloadAndExtract file=autoconf-2.71.tar.gz path=http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
-# buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX" configure="--bindir=$HOME/bin"
-
 
 #Needed for libpciaccess
 if [ -z "$(checkPkg name='xorg-macros' prefix=$PREFIX)" ]; then
@@ -71,6 +72,19 @@ if [ -z "$(checkPkg name='pciaccess' prefix=$PREFIX)" ]; then
     buildMeson1 srcdir="libpciaccess" prefix="$PREFIX"
 else
     echo "libpciaccess already installed."
+fi
+
+if [ -z "$(checkPkg name='gnutls' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://git.savannah.gnu.org/git/gnulib.git" tag="v0.1"
+    preconfigure="./gnulib-tool --create-megatestdir --dir=build"
+    buildMake1 srcdir="gnulib/build" prefix="$PREFIX" preconfigure=$preconfigure
+
+    cd $SOURCES
+    pullOrClone path="https://gitlab.com/gnutls/gnutls.git" tag="3.7.7"
+    buildMake1 srcdir="gnutls" prefix="$PREFIX" 
+else
+    echo "gnutls already installed."
 fi
 
 #Needed by glib-networking
@@ -92,16 +106,91 @@ else
     echo "nasm already installed."
 fi
 
+if [ -z "$(checkPkg name='libpcre2-8' prefix=$PREFIX)" ]; then
+
+    cd $SOURCES
+    pullOrClone path="https://github.com/PCRE2Project/pcre2.git" tag="pcre2-10.37"
+    mkdir "pcre2/build"
+    buildMake1 srcdir="pcre2/build" prefix="$PREFIX" configure="-Dtests=disabled -Ddocs=disabled" cmakedir=".."
+else
+    echo "libpcre2-8 already installed."
+fi
+
+if [ -z "$(checkPkg name='glib-2.0  >= 2.62.6' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://gitlab.gnome.org/GNOME/glib.git" tag="2.62.6" #Cerbero recipe version
+    buildMeson1 srcdir="glib" prefix="$PREFIX" mesonargs="-Dinstalled_tests=false -Dgtk_doc=false -Dinstalled_tests=false"
+
+    #TODO Test gnutls because openssl doesnt seem to work with gstreamer libsoup
+    cd $SOURCES
+    pullOrClone path="https://gitlab.gnome.org/GNOME/glib-networking.git" tag="2.62.3" #Cerbero recipe version
+    buildMeson1 srcdir="glib-networking" prefix="$PREFIX" mesonargs="-Dgnutls=enabled -Dopenssl=enabled"
+else
+    echo "glib already installed."
+fi
+
+if [ -z "$(checkPkg name='gobject-introspection-1.0' prefix=$PREFIX)" ]; then
+
+    cd $SOURCES
+    pullOrClone path="https://gitlab.gnome.org/GNOME/gobject-introspection.git" tag="1.71.0"
+    buildMeson1 srcdir="gobject-introspection" prefix="$PREFIX" mesonargs=""
+else
+    echo "gobject-introspection-1.0 already installed."
+fi
+
+if [ -z "$(checkPkg name='cairo' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="git://anongit.freedesktop.org/git/cairo" tag="1.17.6"
+    buildMeson1 srcdir="cairo" prefix="$PREFIX" mesonargs="-Dtests=disabled -Dgtk_doc=false"
+else
+    echo "cairo already installed."
+fi
+
 #Glib conflict during build time causes pygobject build to fail.
 #Build pygobject manually
 if [ -z "$(checkPkg name='pygobject-3.0' prefix=$PREFIX)" ]; then
     cd $SOURCES
-    pullOrClone path="https://gitlab.gnome.org/GNOME/pygobject.git" tag="3.38.0"
+    pullOrClone path="https://gitlab.gnome.org/GNOME/pygobject.git" tag="3.42.2"
     buildMeson1 srcdir="pygobject" prefix="$PREFIX" bindir="$HOME/bin"
     #For some reason it fails the first time
-    buildMeson1 srcdir="pygobject" prefix="$PREFIX" bindir="$HOME/bin"
+    #cd $SOURCES
+    #buildMeson1 srcdir="pygobject" prefix="$PREFIX" bindir="$HOME/bin"
 else
     echo "pygobject already installed."
+fi
+
+if [ -z "$(checkPkg name='libva' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://github.com/intel/libva.git" tag="2.15.0"
+    buildMeson1 srcdir="libva" prefix="$PREFIX" mesonargs="-Denable_docs=false"
+else
+    echo "libva already installed."
+fi
+
+if [ -z "$(checkPkg name='harfbuzz' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://github.com/harfbuzz/harfbuzz.git" tag="5.2.0"
+    buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Dtests=disabled -Ddocs=disabled -Dintrospection=enabled"
+else
+    echo "harfbuzz already installed."
+fi
+
+if [ -z "$(checkPkg name='pango' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://github.com/GNOME/pango.git" tag="1.48.11"
+    buildMeson1 srcdir="pango" prefix="$PREFIX" mesonargs="-Dinstall-tests=false -Dgtk_doc=false"
+    #This might fail the first time?
+else
+    echo "pango already installed."
+fi
+
+if [ -z "$(checkPkg name='libunwind' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://github.com/libunwind/libunwind.git" tag="v1.6.2"
+    #downloadAndExtract file="mp3lame.tar.xz" path="https://sourceforge.net/projects/lame/files/latest/download"
+    buildMake1 srcdir="libunwind" prefix="$PREFIX" autoreconf=true
+else
+    echo "libunwind already installed."
 fi
 
 echo "*****************************"
@@ -111,10 +200,10 @@ gst_enables+=" -Dlibnice=enabled"
 gst_enables+=" -Dpackage-origin='GitlabFreedesktopMonoRepo'"
 if [[ "$arch" == "armv7l" ]]; then
     echo "arch is arm : $arch"
-    gst_enables+=" -Domx=enabled"
+    #gst_enables+=" -Domx=enabled"
     #TODO Validate rpi board
-    gst_enables+=" -Dgst-omx:target=rpi"
-    gst_enables+=" -Dgst-omx:header_path=/opt/vc/include/IL"
+    #gst_enables+=" -Dgst-omx:target=rpi"
+    #gst_enables+=" -Dgst-omx:header_path=/opt/vc/include/IL"
 fi
 gst_enables+=" -Dtests=disabled"
 gst_enables+=" -Dexamples=disabled"
@@ -132,7 +221,7 @@ setup_patch+=" && sed -i 's/revision=master/revision=main/' ./subprojects/gobjec
 setup_patch+=" && sed -i 's/revision=master/revision=2.73.2/' ./subprojects/pygobject/subprojects/glib.wrap"
 
 cd $SOURCES
-pullOrClone path="https://gitlab.freedesktop.org/gstreamer/gstreamer.git" tag="1.20.3"
+pullOrClone path="https://gitlab.freedesktop.org/gstreamer/gstreamer.git"
 sed -i 's/revision=glib-2-70/revision=2.73.2/' ./gstreamer/subprojects/glib.wrap
 
 buildMeson1 srcdir="gstreamer" prefix="$PREFIX" mesonargs="$gst_enables" setuppatch="$setup_patch" bindir="$HOME/bin"

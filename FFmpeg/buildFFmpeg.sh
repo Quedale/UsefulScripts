@@ -21,49 +21,31 @@ then
   echo "*****************************"
   echo "*** Installing dependencies ***"
   echo "*****************************"
-  sudo apt-get update -qq && sudo apt-get install \
-    build-essential \
-    git-core \
-    libass-dev \
-    libfreetype6-dev \
-    libgnutls28-dev \
-    libmp3lame-dev \
-    libsdl2-dev \
-    libva-dev \
-    libvdpau-dev \
-    libvorbis-dev \
-    libxcb1-dev \
-    libxcb-shm0-dev \
-    libxcb-xfixes0-dev \
-    texinfo \
-    wget \
-    yasm \
-    zlib1g-dev \
-    python3-pip
-
   sudo apt install libunistring-dev
-  sudo apt install libnuma-dev 
+
   sudo python3 -m pip install meson
   sudo python3 -m pip install cmake
   sudo python3 -m pip install ninja
+  echo "*****************************"
+  echo "*   Installing gobject"
+  echo "*****************************"
+  python3 -m pip install gobject
 fi
 
 mkdir -p ~/ffmpeg_sources ~/bin
 
 cd ~/ffmpeg_sources
-#libssh has a hard reference on 1_1_0
-pullOrClone path="https://github.com/openssl/openssl.git" tag="OpenSSL_1_1_1q" #tag="OpenSSL_1_1_0l"
+pullOrClone path="https://github.com/openssl/openssl.git" tag="OpenSSL_1_1_1q"
 buildMake1 srcdir="openssl" prefix="$PREFIX" configcustom="./config --prefix=$PREFIX --openssldir=$PREFIX/ssl shared"
 #TODO check if all distro uses /etc/ssl/certs
 cp -r /etc/ssl/certs/* $PREFIX/ssl/certs
 
 cd ~/ffmpeg_sources
-downloadAndExtract file=Python-2.7.18.tar.xz path=https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz
-buildMake1 srcdir="Python-2.7.18" prefix="$PREFIX" configure="--enable-optimizations  --enable-shared"
-
+downloadAndExtract file="Python-2.7.18.tar.xz" path="https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz"
+buildMake1 srcdir="Python-2.7.18" prefix="$PREFIX" configure="--enable-shared" #--enable-optimizations enable this for fast runtime but slower build
 
 cd ~/ffmpeg_sources
-downloadAndExtract file=autoconf-2.71.tar.gz path=http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
+downloadAndExtract file="autoconf-2.71.tar.gz" path="http://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz"
 buildMake1 srcdir="autoconf-2.71" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
@@ -71,15 +53,20 @@ pullOrClone path="https://git.savannah.gnu.org/r/gawk.git"
 buildMake1 srcdir="gawk" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
+pullOrClone path="https://git.savannah.gnu.org/git/automake.git"  tag="v1.16.5"
+buildMake1 srcdir="automake" prefix="$PREFIX" configure="MAKEINFO=true --bindir=$HOME/bin"
+
+cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/debian-tex/texinfo.git"
 buildMake1 srcdir="texinfo" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
-pullOrClone path="https://git.savannah.gnu.org/git/automake.git"  tag="v1.16.5"
-buildMake1 srcdir="automake" prefix="$PREFIX" configure="--bindir=$HOME/bin"
+downloadAndExtract file="help2man-1.49.2.tar.xz" path="https://ftp.gnu.org/gnu/help2man/help2man-1.49.2.tar.xz"
+buildMake1 srcdir="help2man-1.49.2" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
+#Depends on git://git.sv.gnu.org/gnulib --shallow-since=2019-02-19 - builds automatically
 cd ~/ffmpeg_sources
-downloadAndExtract file=m4-1.4.19.tar.gz path=https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz
+downloadAndExtract file="m4-1.4.19.tar.gz" path="https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.gz"
 buildMake1 srcdir="m4-1.4.19" prefix="$PREFIX"
 
 echo "*****************************"
@@ -89,19 +76,16 @@ echo "*****************************"
 sudo ln /home/pi/bin/m4 /usr/bin/m4
 
 cd ~/ffmpeg_sources
-downloadAndExtract file=pkgconf-1.9.3.tar.gz path=https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz
+downloadAndExtract file="pkgconf-1.9.3.tar.gz" path="https://distfiles.dereferenced.org/pkgconf/pkgconf-1.9.3.tar.gz"
 buildMake1 srcdir="pkgconf-1.9.3" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
-cd ~/ffmpeg_sources
-downloadAndExtract file=help2man-1.49.2.tar.xz path=https://ftp.gnu.org/gnu/help2man/help2man-1.49.2.tar.xz
-buildMake1 srcdir="help2man-1.49.2" prefix="$PREFIX" configure="--bindir=$HOME/bin"
-
+#Depends on git://git.sv.gnu.org/gnulib - builds automatically
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/autotools-mirror/libtool.git" depth=1 tag="v2.4.7"
 buildMake1 srcdir="libtool" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
-downloadAndExtract file=nasm-2.15.05.tar.bz2 path=https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2
+downloadAndExtract file="nasm-2.15.05.tar.bz2" path="https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2"
 buildMake1 srcdir="nasm-2.15.05" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
@@ -109,7 +93,7 @@ pullOrClone path="https://code.videolan.org/videolan/x264.git" depth=1
 buildMake1 srcdir="x264" prefix="$PREFIX" configure="--enable-shared --enable-pic --bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
-downloadAndExtract file=master.tar.bz2 path=https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
+downloadAndExtract file="master.tar.bz2" path="https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2"
 buildMake1 srcdir="multicoreware*/build/linux" prefix="$PREFIX" cmakedir="../../source" configure="--bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
@@ -203,9 +187,39 @@ cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/fribidi/fribidi.git"
 buildMeson1 srcdir="fribidi" prefix="$PREFIX" mesonargs="-Ddocs=false"
 
+CHECK=1
+if [ -z "$(checkPkg name='libpcre2-8' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://github.com/PCRE2Project/pcre2.git" tag="pcre2-10.37"
+    mkdir "pcre2/build"
+    buildMake1 srcdir="pcre2/build" prefix="$PREFIX" configure="-Dtests=disabled -Ddocs=disabled" cmakedir=".."
+else
+    echo "libpcre2-8 already installed."
+fi
+
+if [ -z "$(checkPkg name='glib-2.0  >= 2.62.6' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://gitlab.gnome.org/GNOME/glib.git" tag="2.62.6" #Cerbero recipe version
+    buildMeson1 srcdir="glib" prefix="$PREFIX" mesonargs="-Dinstalled_tests=false -Dgtk_doc=false -Dinstalled_tests=false"
+
+    cd $SOURCES
+    pullOrClone path="https://gitlab.gnome.org/GNOME/glib-networking.git" tag="2.62.3" #Cerbero recipe version
+    buildMeson1 srcdir="glib-networking" prefix="$PREFIX" mesonargs="-Dopenssl=enabled"
+else
+    echo "glib already installed."
+fi
+
+if [ -z "$(checkPkg name='gobject-introspection-1.0' prefix=$PREFIX)" ]; then
+    cd $SOURCES
+    pullOrClone path="https://gitlab.gnome.org/GNOME/gobject-introspection.git" tag="1.71.0"
+    buildMeson1 srcdir="gobject-introspection" prefix="$PREFIX" mesonargs=""
+else
+    echo "gobject-introspection-1.0 already installed."
+fi
+
 cd ~/ffmpeg_sources
-pullOrClone path="https://github.com/harfbuzz/harfbuzz.git"
-buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Ddocs=disabled"
+pullOrClone path="https://github.com/harfbuzz/harfbuzz.git" tag="5.2.0"
+buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Dtests=disabled -Ddocs=disabled -Dintrospection=enabled"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/freedesktop/fontconfig.git"
@@ -222,6 +236,28 @@ buildMake1 srcdir="libXext" prefix="$PREFIX"
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/libsdl-org/SDL.git"
 buildMake1 srcdir="SDL" prefix="$PREFIX"
+
+if [ -z "$(checkPkg name='gmp' prefix=$PREFIX)" ]; then
+    cd ~/ffmpeg_sources
+    downloadAndExtract file="gmp-6.2.1.tar.xz" path="https://gmplib.org/download/gmp/gmp-6.2.1.tar.xz"
+    buildMake1 srcdir="gmp-6.2.1" prefix="$PREFIX"
+else
+    echo "gmp already installed."
+fi
+
+cd ~/ffmpeg_sources
+downloadAndExtract file="mp3lame.tar.xz" path="https://sourceforge.net/projects/lame/files/latest/download"
+buildMake1 srcdir="lame-3.100" prefix="$PREFIX"
+
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/xiph/ogg.git" tag="v1.3.5"
+mkdir "ogg/build"
+buildMake1 srcdir="ogg/build" prefix="$PREFIX" cmakedir=".."
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/xiph/vorbis.git" tag="v1.3.5"
+buildMake1 srcdir="vorbis" prefix="$PREFIX"
 
 echo "*****************************"
 echo "*** sudo ldconfig ***"
@@ -283,6 +319,8 @@ PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
     --ld="g++" \
     --bindir="$HOME/bin" \
     --target-os=linux \
+    --enable-pic \
+    --enable-shared \
     $ffmpeg_enables
 echo "*****************************"
 echo "*** Make FFmpeg      ***"

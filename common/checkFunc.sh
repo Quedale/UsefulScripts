@@ -1,31 +1,35 @@
 #!/bin/sh
 
+ORANGE='\033[0;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 downloadAndExtract (){
   local path file # reset first
   local "${@}"
 
   if [ $SKIP -eq 1 ]
   then
-      echo "*****************************"
-      echo "*** Skipping Download ${path} ***"
-      echo "*****************************"
+      printf "${ORANGE}*****************************\n${NC}"
+      printf "${ORANGE}*** Skipping Download ${path} ***\n${NC}"
+      printf "${ORANGE}*****************************\n${NC}"
       return
   fi
 
   if [ ! -f "${file}" ]; then
-    echo "*****************************"
-    echo "*** Downloading : ${path} ***"
-    echo "*****************************"
-    wget ${path}
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** Downloading : ${path} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
+    wget ${path} -O ${file}
   else
-    echo "*****************************"
-    echo "*** Source already downloaded : ${path} ***"
-    echo "*****************************"
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** Source already downloaded : ${path} ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
   fi
 
-  echo "*****************************"
-  echo "*** Extracting : ${file} ***"
-  echo "*****************************"
+  printf "${ORANGE}*****************************\n${NC}"
+  printf "${ORANGE}*** Extracting : ${file} ***\n${NC}"
+  printf "${ORANGE}*****************************\n${NC}"
   if [[ ${file} == *.tar.gz ]]; then
     tar xfz ${file}
   elif [[ ${file} == *.tar.xz ]]; then
@@ -44,9 +48,9 @@ pullOrClone (){
 
   if [ $SKIP -eq 1 ]
   then
-      echo "*****************************"
-      echo "*** Skipping Pull/Clone ${tag}@${path} ***"
-      echo "*****************************"
+      printf "${ORANGE}*****************************\n${NC}"
+      printf "${ORANGE}*** Skipping Pull/Clone ${tag}@${path} ***\n${NC}"
+      printf "${ORANGE}*****************************\n${NC}"
       return
   fi
 
@@ -69,9 +73,9 @@ pullOrClone (){
     tgstr2="-b ${tag}"
   fi
 
-  echo "*****************************"
-  echo "*** Cloning ${tag}@${path} ***"
-  echo "*****************************"
+  printf "${ORANGE}*****************************\n${NC}"
+  printf "${ORANGE}*** Cloning ${tag}@${path} ***\n${NC}"
+  printf "${ORANGE}*****************************\n${NC}"
   IFS='/' read -ra ADDR <<< "$path"
   namedotgit=${ADDR[-1]}
   IFS='.' read -ra ADDR <<< "$namedotgit"
@@ -85,14 +89,14 @@ function displaytime {
     local H=$((T/60/60%24))
     local M=$((T/60%60))
     local S=$((T%60))
-    echo "*****************************"
-    printf '*** '
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** "
     (( $D > 0 )) && printf '%d days ' $D
     (( $H > 0 )) && printf '%d hours ' $H
     (( $M > 0 )) && printf '%d minutes ' $M
     (( $D > 0 || $H > 0 || $M > 0 )) && printf 'and '
-    printf '%d seconds\n' $S
-    echo "*****************************"
+    printf "%d seconds\n${NC}" $S
+    printf "${ORANGE}*****************************\n${NC}"
 }
 
 
