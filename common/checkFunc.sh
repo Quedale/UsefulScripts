@@ -101,14 +101,24 @@ function displaytime {
 
 
 checkPkg (){
-    local name prefix # reset first
+    local name prefix atleast exact # reset first
     local "${@}"
     
+    ver_val=""
+    if [ ! -z "${atleast}" ]; then
+      ver_val="--atleast-version=${atleast}"
+    elif [ ! -z "${exact}" ]; then
+      ver_val="--exact-version=${exact}"
+    fi
+
     PATH="$HOME/bin:$PATH" \
     LD_LIBRARY_PATH="${prefix}/lib" \
     PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
-    pkg-config --exists --print-errors ${name} 2> /dev/null || return
-    echo "Installed"
+    pkg-config --exists --print-errors $ver_val ${name}
+    ret=$?
+    if [ $ret -eq 0 ]; then
+      echo "Installed"
+    fi
 }
 
 checkProg () {

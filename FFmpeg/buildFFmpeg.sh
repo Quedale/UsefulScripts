@@ -2,7 +2,7 @@
 #include build functions
 PREFIX="$HOME/ffmpeg_build"
 script_start=$SECONDS
-CHECK=0
+CHECK=1
 SKIP=0
 echo "$(dirname "$0")"
 source $(dirname "$0")/../common/buildfunc.sh
@@ -57,12 +57,12 @@ pullOrClone path="https://git.savannah.gnu.org/git/automake.git"  tag="v1.16.5"
 buildMake1 srcdir="automake" prefix="$PREFIX" configure="MAKEINFO=true --bindir=$HOME/bin"
 
 cd ~/ffmpeg_sources
-pullOrClone path="https://github.com/debian-tex/texinfo.git"
-buildMake1 srcdir="texinfo" prefix="$PREFIX" configure="--bindir=$HOME/bin"
-
-cd ~/ffmpeg_sources
 downloadAndExtract file="help2man-1.49.2.tar.xz" path="https://ftp.gnu.org/gnu/help2man/help2man-1.49.2.tar.xz"
 buildMake1 srcdir="help2man-1.49.2" prefix="$PREFIX" configure="--bindir=$HOME/bin"
+
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/debian-tex/texinfo.git"
+buildMake1 srcdir="texinfo" prefix="$PREFIX" configure="--bindir=$HOME/bin"
 
 #Depends on git://git.sv.gnu.org/gnulib --shallow-since=2019-02-19 - builds automatically
 cd ~/ffmpeg_sources
@@ -106,7 +106,8 @@ buildMake1 srcdir="fdk-aac" prefix="$PREFIX" autoreconf=true configure="--enable
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/xiph/opus.git" depth=1
-buildMake1 srcdir="opus" prefix="$PREFIX"
+setup_patch="sed -i 's/PACKAGE_VERSION=\"unknown\"/PACKAGE_VERSION=\"1.3.2\"/' ./package_version"
+buildMake1 srcdir="opus" prefix="$PREFIX" configure="--disable-doc" preconfigure="$setup_patch"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://aomedia.googlesource.com/aom" depth=1
@@ -187,7 +188,6 @@ cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/fribidi/fribidi.git"
 buildMeson1 srcdir="fribidi" prefix="$PREFIX" mesonargs="-Ddocs=false"
 
-CHECK=1
 if [ -z "$(checkPkg name='libpcre2-8' prefix=$PREFIX)" ]; then
     cd $SOURCES
     pullOrClone path="https://github.com/PCRE2Project/pcre2.git" tag="pcre2-10.37"
@@ -219,7 +219,7 @@ fi
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/harfbuzz/harfbuzz.git" tag="5.2.0"
-buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Dtests=disabled -Ddocs=disabled -Dintrospection=enabled"
+buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Ddefault_library=both -Dtests=disabled -Ddocs=disabled -Dintrospection=enabled"
 
 cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/freedesktop/fontconfig.git"
@@ -259,6 +259,10 @@ cd ~/ffmpeg_sources
 pullOrClone path="https://github.com/xiph/vorbis.git" tag="v1.3.5"
 buildMake1 srcdir="vorbis" prefix="$PREFIX"
 
+cd ~/ffmpeg_sources
+pullOrClone path="https://github.com/cisco/openh264.git"
+buildMeson1 srcdir="openh264" prefix="$PREFIX" mesonargs="-Dtests=disabled"
+
 echo "*****************************"
 echo "*** sudo ldconfig ***"
 echo "*****************************"
@@ -287,6 +291,7 @@ ffmpeg_enables+=" --enable-libx264"
 ffmpeg_enables+=" --enable-libx265"
 ffmpeg_enables+=" --enable-libxml2"
 ffmpeg_enables+=" --enable-nonfree"
+ffmpeg_enables+=" --enable-libopenh264"
 ffmpeg_enables+=" --enable-version3"
 ffmpeg_enables+=" --enable-pic"
 ffmpeg_enables+=" --enable-shared"
@@ -340,7 +345,6 @@ hash -r
 #TODO
 #--enable-libopencore-amrnb
 #--enable-libopencore-amrwb
-#--enable-libopenh264
 #--enable-libopenjpeg
 #--enable-librav1e
 #--enable-libtwolame
