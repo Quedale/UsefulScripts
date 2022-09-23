@@ -10,9 +10,9 @@ NC='\033[0m' # No Color
 buildMake1() {
     local srcdir prefix autoreconf preconfigure configure configcustom cmakedir autogenargs cmakeargs makeargs # reset first
     local "${@}"
+
     build_start=$SECONDS
-    if [ $SKIP -eq 1 ]
-    then
+    if [ $SKIP -eq 1 ]; then
         printf "${ORANGE}*****************************\n${NC}"
         printf "${ORANGE}*** Skipping Make ${srcdir} ***\n${NC}"
         printf "${ORANGE}*****************************\n${NC}"
@@ -112,7 +112,8 @@ buildMake1() {
             ${cmakeargs} \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX="${prefix}" \
-            -DENABLE_TESTS=OFF -DENABLE_SHARED=on \
+            -DENABLE_TESTS=OFF \
+            -DENABLE_SHARED=on \
             -DENABLE_NASM=on \
             -DPYTHON_EXECUTABLE="$(which python3)" \
             -DBUILD_DEC=OFF \
@@ -325,7 +326,7 @@ buildMeson1() {
         PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
             meson setup \
                 ${mesonargs} \
-                --default-library=static .. \
+                --default-library=both .. \
                 --prefix=${prefix} \
                 $bindir_val \
                 --libdir=${prefix}/lib \
@@ -388,12 +389,14 @@ buildMeson1() {
         PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" \
             meson setup \
                 ${mesonargs} \
+                --default-library=both \
                 --prefix=${prefix} \
                 $bindir_val \
                 --libdir=${prefix}/lib \
                 --includedir=${prefix}/include \
                 --buildtype=release 
                 #--reconfigure
+
         status=$?
         if [ $status -ne 0 ]; then
             printf "${RED}*****************************\n${NC}"

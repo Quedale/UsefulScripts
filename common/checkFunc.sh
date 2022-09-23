@@ -16,26 +16,35 @@ downloadAndExtract (){
       return
   fi
 
-  if [ ! -f "${file}" ]; then
+  dest_val=""
+  if [ ! -z "$SRC_CACHE_DIR" ]; then
+    dest_val="$SRC_CACHE_DIR/${file}"
+  else
+    dest_val=${file}
+  fi
+
+  if [ ! -f "$dest_val" ]; then
     printf "${ORANGE}*****************************\n${NC}"
     printf "${ORANGE}*** Downloading : ${path} ***\n${NC}"
+    printf "${ORANGE}*** Destination : $dest_val ***\n${NC}"
     printf "${ORANGE}*****************************\n${NC}"
-    wget ${path} -O ${file}
+    wget ${path} -O $dest_val
   else
     printf "${ORANGE}*****************************\n${NC}"
     printf "${ORANGE}*** Source already downloaded : ${path} ***\n${NC}"
+    printf "${ORANGE}*** Destination : $dest_val ***\n${NC}"
     printf "${ORANGE}*****************************\n${NC}"
   fi
 
   printf "${ORANGE}*****************************\n${NC}"
   printf "${ORANGE}*** Extracting : ${file} ***\n${NC}"
   printf "${ORANGE}*****************************\n${NC}"
-  if [[ ${file} == *.tar.gz ]]; then
-    tar xfz ${file}
-  elif [[ ${file} == *.tar.xz ]]; then
-    tar xf ${file}
-  elif [[ ${file} == *.tar.bz2 ]]; then
-    tar xjf ${file}
+  if [[ $dest_val == *.tar.gz ]]; then
+    tar xfz $dest_val
+  elif [[ $dest_val == *.tar.xz ]]; then
+    tar xf $dest_val
+  elif [[ $dest_val == *.tar.bz2 ]]; then
+    tar xjf $dest_val
   else
     echo "ERROR FILE NOT FOUND ${path} // ${file}"
     exit 1
@@ -80,7 +89,49 @@ pullOrClone (){
   namedotgit=${ADDR[-1]}
   IFS='.' read -ra ADDR <<< "$namedotgit"
   name=${ADDR[0]}
-  git -C $name pull $tgstr 2> /dev/null || git clone -j$(nproc) $recursestr $depthstr $tgstr2 ${path}
+
+  dest_val=""
+  if [ ! -z "$SRC_CACHE_DIR" ]; then
+    dest_val="$SRC_CACHE_DIR/$name"
+  else
+    dest_val=$name
+  fi
+  if [ ! -z "${tag}" ]; then
+    dest_val+="-${tag}"
+  fi
+
+  if [ -z "$SRC_CACHE_DIR" ]; then 
+    #TODO Check if it's the right tag
+    git -C $dest_val pull $tgstr 2> /dev/null || git clone -j$(nproc) $recursestr $depthstr $tgstr2 ${path} $dest_val
+  elif [ -d "$dest_val" ] && [ ! -z "${tag}" ]; then #Folder exist, switch to tag
+    currenttag=$(git -C $dest_val tag --points-at ${tag})
+    echo "TODO Check current tag \"${tag}\" == \"$currenttag\""
+    git -C $dest_val pull $tgstr 2> /dev/null || git clone -j$(nproc) $recursestr $depthstr $tgstr2 ${path} $dest_val
+  elif [ -d "$dest_val" ] && [ -z "${tag}" ]; then #Folder exist, switch to main
+    currenttag=$(git -C $dest_val tag --points-at ${tag})
+    echo "TODO Handle no tag \"${tag}\" == \"$currenttag\""
+    git -C $dest_val pull $tgstr 2> /dev/null || git clone -j$(nproc) $recursestr $depthstr $tgstr2 ${path} $dest_val
+  elif [ ! -d "$dest_val" ]; then #fresh start
+    git -C $dest_val pull $tgstr 2> /dev/null || git clone -j$(nproc) $recursestr $depthstr $tgstr2 ${path} $dest_val
+  else
+    if [ -d "$dest_val" ]; then
+      echo "yey destval"
+    fi
+    if [ -z "${tag}" ]; then
+      echo "yey tag"
+    fi
+    echo "1 $dest_val : $(test -f \"$dest_val\")"
+    echo "2 ${tag} : $(test -z \"${tag}\")"
+  fi
+
+  if [ ! -z "$SRC_CACHE_DIR" ]; then
+    printf "${ORANGE}*****************************\n${NC}"
+    printf "${ORANGE}*** Copy repo from cache ***\n${NC}"
+    printf "${ORANGE}*** $dest_val ***\n${NC}"
+    printf "${ORANGE}*****************************\n${NC}"
+    rm -rf $name
+    cp -r $dest_val ./$name
+  fi
 }
 
 function displaytime {

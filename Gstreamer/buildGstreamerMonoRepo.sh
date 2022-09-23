@@ -2,6 +2,7 @@
 #include build functions
 PREFIX="$HOME/gst_build"
 SOURCES="$HOME/gst_sources"
+SRC_CACHE_DIR="$HOME/src_cache"
 CHECK=1
 SKIP=0
 source $(dirname "$0")/../common/buildfunc.sh
@@ -12,6 +13,7 @@ echo "*** Architecture $arch ***"
 echo "*****************************"
 mkdir $PREFIX
 mkdir $SOURCES
+mkdir $SRC_CACHE_DIR
 
 #Carry ffmpeg build if exists to prevent fallback
 echo "*****************************"
@@ -110,23 +112,23 @@ else
     echo "libpcre2-8 already installed."
 fi
 
-if [ -z "$(checkPkg name='glib-2.0' atleast='2.62.6' prefix=$PREFIX)" ]; then
+if [ -z "$(checkPkg name='glib-2.0' exact='2.62.6' prefix=$PREFIX)" ]; then
     cd $SOURCES
-    pullOrClone path="https://gitlab.gnome.org/GNOME/glib.git" tag="2.62.6" #Cerbero recipe version
+    pullOrClone path="https://gitlab.gnome.org/GNOME/glib.git" tag="2.62.6" # 2.62.6 Cerbero recipe version
     buildMeson1 srcdir="glib" prefix="$PREFIX" mesonargs="-Dinstalled_tests=false -Dgtk_doc=false -Dinstalled_tests=false"
 
     #TODO Test gnutls because openssl doesnt seem to work with gstreamer libsoup
     cd $SOURCES
-    pullOrClone path="https://gitlab.gnome.org/GNOME/glib-networking.git" tag="2.62.3" #Cerbero recipe version
+    pullOrClone path="https://gitlab.gnome.org/GNOME/glib-networking.git" tag="2.62.3" # 2.62.3 Cerbero recipe version
     buildMeson1 srcdir="glib-networking" prefix="$PREFIX" mesonargs="-Dgnutls=enabled -Dopenssl=enabled"
 else
     echo "glib already installed."
 fi
 
-if [ -z "$(checkPkg name='gobject-introspection-1.0' atleast='1.71.0' prefix=$PREFIX)" ]; then
+if [ -z "$(checkPkg name='gobject-introspection-1.0' exact='1.56.1' prefix=$PREFIX)" ]; then
 
     cd $SOURCES
-    pullOrClone path="https://gitlab.gnome.org/GNOME/gobject-introspection.git" tag="1.71.0"
+    pullOrClone path="https://gitlab.gnome.org/GNOME/gobject-introspection.git" tag="1.56.1" #Cerbero recipe version
     buildMeson1 srcdir="gobject-introspection" prefix="$PREFIX" mesonargs=""
 else
     echo "gobject-introspection-1.0 already installed."
@@ -153,18 +155,18 @@ else
     echo "pygobject already installed."
 fi
 
-if [ -z "$(checkPkg name='libva' atleast='1.15.0' prefix=$PREFIX)" ]; then
-    cd $SOURCES
-    pullOrClone path="https://github.com/intel/libva.git" tag="2.15.0"
-    buildMeson1 srcdir="libva" prefix="$PREFIX" mesonargs="-Denable_docs=false"
-else
-    echo "libva already installed."
-fi
+# if [ -z "$(checkPkg name='libva' atleast='1.15.0' prefix=$PREFIX)" ]; then
+#     cd $SOURCES
+#     pullOrClone path="https://github.com/intel/libva.git" tag="2.15.0"
+#     buildMeson1 srcdir="libva" prefix="$PREFIX" mesonargs="-Denable_docs=false"
+# else
+#     echo "libva already installed."
+# fi
 
-if [ -z "$(checkPkg name='harfbuzz' atleast='5.2.0' prefix=$PREFIX)" ]; then
+if [ -z "$(checkPkg name='harfbuzz' atleast='2.6.7' prefix=$PREFIX)" ]; then
     cd $SOURCES
-    pullOrClone path="https://github.com/harfbuzz/harfbuzz.git" tag="5.2.0"
-    buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Ddefault_library=both -Dtests=disabled -Ddocs=disabled -Dintrospection=enabled"
+    pullOrClone path="https://github.com/harfbuzz/harfbuzz.git" tag="2.6.7"
+    buildMeson1 srcdir="harfbuzz" prefix="$PREFIX" mesonargs="-Dtests=disabled -Ddocs=disabled -Dintrospection=enabled"
 else
     echo "harfbuzz already installed."
 fi
@@ -217,14 +219,14 @@ setup_patch+=" && sed -i 's/revision=master/revision=2.73.2/' ./subprojects/pygo
 
 cd $SOURCES
 pullOrClone path="https://gitlab.freedesktop.org/gstreamer/gstreamer.git"
-sed -i 's/revision=glib-2-70/revision=2.73.2/' ./gstreamer/subprojects/glib.wrap
+#sed -i 's/revision=glib-2-70/revision=2.73.2/' ./gstreamer/subprojects/glib.wrap
 
 buildMeson1 srcdir="gstreamer" prefix="$PREFIX" mesonargs="$gst_enables" setuppatch="$setup_patch" bindir="$HOME/bin"
 #Reconfigure to pickup self-dependencies and recompile
 #buildMeson1 srcdir="gstreamer" prefix="$PREFIX" mesonargs="$gst_enables" setuppatch="$setup_patch" bindir="$HOME/bin"
 
 ##run Gstreamer portably* and force reload plugins
-sudo rm -rf /home/pi/.cache/gstreamer-1.0/registry.armv7l.bin
+sudo rm -rf $HOME/.cache/gstreamer-1.0/registry.armv7l.bin
 GI_TYPELIB_PATH="$PREFIX/lib/girepository-1.0" \
 PYTHONPATH="$PREFIX/lib/python3/dist-packages" \
 LIBRARY_PATH="$PREFIX/lib:$LIBRARY_PATH" \
